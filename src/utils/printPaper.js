@@ -64,7 +64,7 @@ export const printPaper = async (questions) => {
           const xPos = (pageWidth - imageWidth) / 2;
           
           doc.addImage(imageData, 'JPEG', xPos, currentY, imageWidth, imageHeight);
-          currentY += imageHeight + 3; // Reduced from 10mm to 3mm
+          currentY += imageHeight + 5; // Reduced from 10mm to 3mm
           resolve();
         };
         img.onerror = () => resolve();
@@ -106,7 +106,7 @@ export const printPaper = async (questions) => {
         });
       });
 
-      currentY += tableHeight + 3; // Reduced from 10mm to 3mm
+      currentY += tableHeight + 5; // Reduced from 10mm to 5mm
     };
 
     // Process each main question
@@ -140,7 +140,7 @@ export const printPaper = async (questions) => {
           currentY += (textLines.length * 6); // Reduced from 7mm to 6mm
         }
 
-        currentY += 2; // Reduced from 5mm to 2mm
+        currentY += 0; // Reduced from 5mm to 2mm
 
         // Add main question image (60mm height)
         if (question.image) {
@@ -152,7 +152,7 @@ export const printPaper = async (questions) => {
           addTable(question.table.data, question.table.cols);
         }
 
-        currentY += 2; // Reduced from 5mm to 2mm
+        currentY += 0; // Reduced from 5mm to 2mm
       }
 
       // Process Sub-Questions
@@ -184,18 +184,20 @@ export const printPaper = async (questions) => {
           const subPlainText = htmlToPlainText(subQuestion.text);
           
           if (subPlainText) {
-            const subTextLines = doc.splitTextToSize(subPlainText, contentWidth - subLabelWidth - 15);
+            // Calculate available width from the sub-question starting position
+            const availableWidth = (pageWidth - margin) - (subMargin + subLabelWidth);
+            const subTextLines = doc.splitTextToSize(subPlainText, availableWidth);
             doc.text(subTextLines, subMargin + subLabelWidth, currentY);
-            currentY += (subTextLines.length * 6); // Reduced from 7mm to 6mm
+            currentY += (subTextLines.length * 6);
           } else {
-            currentY += 6; // Reduced from 7mm to 6mm
+            currentY += 6;
           }
 
-          currentY += 2; // Reduced from 3mm to 2mm
+          currentY += 2;
 
           // Add sub-question image (40mm height)
           if (subQuestion.image) {
-            await addImage(subQuestion.image, 40);
+            await addImage(subQuestion.image, 50);
           }
 
           // Add sub-question table
@@ -210,7 +212,7 @@ export const printPaper = async (questions) => {
               
               if (currentY > pageHeight - 40) {
                 doc.addPage();
-                drawPageBorder(); // Draw border on new page
+                drawPageBorder();
                 currentY = margin;
               }
 
@@ -227,18 +229,20 @@ export const printPaper = async (questions) => {
               const nestedPlainText = htmlToPlainText(nestedSub.text);
               
               if (nestedPlainText) {
-                const nestedTextLines = doc.splitTextToSize(nestedPlainText, contentWidth - nestedLabelWidth - 25);
+                // Calculate available width from the nested sub-question starting position
+                const availableWidth = (pageWidth - margin) - (nestedMargin + nestedLabelWidth);
+                const nestedTextLines = doc.splitTextToSize(nestedPlainText, availableWidth);
                 doc.text(nestedTextLines, nestedMargin + nestedLabelWidth, currentY);
-                currentY += (nestedTextLines.length * 6); // Reduced from 7mm to 6mm
+                currentY += (nestedTextLines.length * 6);
               } else {
-                currentY += 6; // Reduced from 7mm to 6mm
+                currentY += 6;
               }
 
-              currentY += 2; // Reduced from 3mm to 2mm
+              currentY += 1;
 
               // Add nested sub-question image (20mm height)
               if (nestedSub.image) {
-                await addImage(nestedSub.image, 20);
+                await addImage(nestedSub.image, 30);
               }
 
               // Add nested sub-question table
@@ -246,16 +250,16 @@ export const printPaper = async (questions) => {
                 addTable(nestedSub.table.data, nestedSub.table.cols);
               }
 
-              currentY += 2; // Reduced from 3mm to 2mm
+              currentY += 1;
             }
           }
 
-          currentY += 2; // Reduced from 3mm to 2mm
+          currentY += 1;
         }
       }
 
       // Add spacing between main questions
-      currentY += 5; // Reduced from 10mm to 5mm
+      currentY += 3; // Reduced from 10mm to 5mm
     }
 
     // Save the PDF
