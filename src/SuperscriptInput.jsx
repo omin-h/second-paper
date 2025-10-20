@@ -116,6 +116,30 @@ export default function SuperscriptInput() {
     }, 0);
   };
 
+  const handleOverline = () => {
+    const input = inputRef.current;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+
+    if (start === end) {
+      alert("Please select some text first!");
+      return;
+    }
+
+    const selectedText = text.substring(start, end);
+    
+    // Simply add apostrophe (') to show as complement notation
+    const overlineText = selectedText + "'";
+
+    const newText = text.substring(0, start) + overlineText + text.substring(end);
+    setText(newText);
+
+    setTimeout(() => {
+      input.focus();
+      input.setSelectionRange(start + overlineText.length, start + overlineText.length);
+    }, 0);
+  };
+
   const handlePrintPdf = async () => {
     if (!text) {
       alert("Please enter some text first!");
@@ -207,6 +231,20 @@ export default function SuperscriptInput() {
         return x + maxWidth;
       };
 
+      // Function to draw overline (NOT gate bar)
+      const drawOverline = (textContent, x, y) => {
+        doc.setFont("times");
+        const textWidth = doc.getTextWidth(textContent);
+        
+        // Draw the text
+        doc.text(textContent, x, y);
+        
+        // Draw line above text
+        doc.line(x, y - 3, x + textWidth, y - 3);
+        
+        return x + textWidth;
+      };
+
       // Function to print mixed text with auto font switching, super/subscripts, and fractions
       const printMixedText = (text, x, y) => {
         let currentX = x;
@@ -216,6 +254,48 @@ export default function SuperscriptInput() {
         let i = 0;
         while (i < text.length) {
           const char = text[i];
+          
+          // Check for overline pattern: text followed by '
+          // Look for pattern like A' or (A+B)'
+          if (i > 0 && char === "'") {
+            // Find the start of the expression to overline
+            let j = i - 1;
+            let overlineContent = '';
+            let startPos = j;
+            
+            // If previous char is ), find matching (
+            if (text[j] === ')') {
+              let depth = 1;
+              j--;
+              while (j >= 0 && depth > 0) {
+                if (text[j] === ')') depth++;
+                if (text[j] === '(') depth--;
+                j--;
+              }
+              startPos = j + 1;
+              overlineContent = text.substring(startPos, i);
+            } else {
+              // Single character or simple expression
+              // Go back to find start (stop at space, operator, or start)
+              while (j >= 0 && /[A-Za-z0-9]/.test(text[j])) {
+                j--;
+              }
+              startPos = j + 1;
+              overlineContent = text.substring(startPos, i);
+            }
+            
+            // We need to redraw from startPos with overline
+            // Calculate how much to move back
+            doc.setFont("times");
+            const backWidth = doc.getTextWidth(overlineContent);
+            currentX -= backWidth;
+            
+            // Draw with overline
+            currentX = drawOverline(overlineContent, currentX, y);
+            
+            i++;
+            continue;
+          }
           
           // Check if this is start of a fraction pattern
           if (isSuperscript(char) || char === '⁽') {
@@ -245,6 +325,12 @@ export default function SuperscriptInput() {
                 continue;
               }
             }
+          }
+          
+          // Skip apostrophe if it's part of overline (already handled above)
+          if (char === "'") {
+            i++;
+            continue;
           }
           
           // Normal character processing
@@ -298,7 +384,7 @@ export default function SuperscriptInput() {
           onChange={(e) => setText(e.target.value)}
           placeholder="Type text here (e.g., x2, H2O, (x+y)/2)"
           style={{
-            width: "500px",
+            width: "600px",
             padding: "10px",
             fontSize: "16px",
             marginRight: "10px"
@@ -345,6 +431,21 @@ export default function SuperscriptInput() {
           ¹⁄₂ Fraction
         </button>
         <button
+          onClick={handleOverline}
+          style={{
+            padding: "10px 20px",
+            fontSize: "14px",
+            marginRight: "10px",
+            cursor: "pointer",
+            backgroundColor: "#FF9800",
+            color: "white",
+            border: "none",
+            borderRadius: "4px"
+          }}
+        >
+          A' Overline (NOT)
+        </button>
+        <button
           onClick={handlePrintPdf}
           style={{
             padding: "10px 20px",
@@ -360,7 +461,7 @@ export default function SuperscriptInput() {
         </button>
       </div>
 
-      <div style={{ marginTop: "20px", padding: "15px", background: "#000000ff", borderRadius: "5px" }}>
+      <div style={{ marginTop: "20px", padding: "15px", background: "#f0f0f0", borderRadius: "5px" }}>
         <h3>Preview:</h3>
         <p style={{ fontSize: "20px", fontFamily: "Arial" }}>{text || "No text yet..."}</p>
       </div>
@@ -368,17 +469,16 @@ export default function SuperscriptInput() {
       <div style={{ marginTop: "20px", fontSize: "12px", color: "#666" }}>
         <strong>How to use:</strong>
         <ol>
-          <li>Type text like "x2", "H2O", "(x+y)/2", or "20/100"</li>
+          <li>Type text like "A", "A+B", or expressions</li>
           <li>Select the part you want to convert</li>
-          <li>Click "x² Superscript", "x₂ Subscript", or "¹⁄₂ Fraction" button</li>
-          <li>The selected text will be converted!</li>
+          <li>Click appropriate button for conversion</li>
           <li>Click "📄 Export to PDF" to download as PDF</li>
         </ol>
         <strong>Examples:</strong>
         <ul>
+          <li>Type "A" → select "A" → click Overline → becomes "A'" (displays with overline in PDF)</li>
+          <li>Type "A+B" → select "A+B" → click Overline → becomes "(A+B)'"</li>
           <li>Type "(x+y)/2" → select it → click Fraction → becomes "⁽ˣ⁺ʸ⁾⁄₂"</li>
-          <li>Type "20/100" → select it → click Fraction → becomes "²⁰⁄₁₀₀"</li>
-          <li>Type "a/b" → select it → click Fraction → becomes "ᵃ⁄ᵇ"</li>
         </ul>
       </div>
     </div>
