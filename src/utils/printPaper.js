@@ -65,6 +65,174 @@ export const printPaper = async (questions) => {
 
 
 
+    // NEW: Parse and render HTML with formatting
+    // Improved HTML -> formatted wrapped text renderer
+    const renderFormattedText = (html, x, startY, maxWidth) => {
+      const parser = new DOMParser();
+      const htmlDoc = parser.parseFromString(html, 'text/html');
+      const body = htmlDoc.body;
+
+      // collect runs of text with style
+      const runs = [];
+      const collect = (node, style = { bold: false, italic: false, underline: false }) => {
+        if (!node) return;
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent;
+          if (!text) return;
+          // keep spaces as tokens
+          const tokens = text.match(/\S+|\s+/g) || [];
+          tokens.forEach(t => runs.push({ text: t, style: { ...style } }));
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const tag = node.tagName.toLowerCase();
+          const newStyle = { ...style };
+          if (tag === 'b' || tag === 'strong') newStyle.bold = true;
+          if (tag === 'i' || tag === 'em') newStyle.italic = true;
+          if (tag === 'u') newStyle.underline = true;
+          if (tag === 'br') {
+            runs.push({ text: '\n', style: { ...style } });
+          } else {
+            node.childNodes.forEach(child => collect(child, newStyle));
+            if (tag === 'p') runs.push({ text: '\n', style: { ...style } });
+          }
+        }
+      };
+      body.childNodes.forEach(node => collect(node));
+
+      const lineHeight = 6;
+      const lines = [];
+      let currentLine = [];
+      let currentLineWidth = 0;
+
+      const pushLine = () => {
+        lines.push(currentLine);
+        currentLine = [];
+        currentLineWidth = 0;
+      };
+
+      const setFontForStyle = (s) => {
+        if (s.bold && s.italic) doc.setFont("times", "bolditalic");
+        else if (s.bold) doc.setFont("times", "bold");
+        else if (s.italic) doc.setFont("times", "italic");
+        else doc.setFont("times", "normal");
+      };
+
+      // helper to get width for text with style
+      const getWidth = (text, style) => {
+        const prevFont = doc.getFont();
+        setFontForStyle(style);
+        const w = doc.getTextWidth(text);
+        doc.setFont(prevFont.fontName, prevFont.fontStyle);
+        return w;
+      };
+
+      // iterate tokens and build lines
+      for (let i = 0; i < runs.length; i++) {
+        const run = runs[i];
+
+        // handle explicit newlines
+        if (run.text === '\n') {
+          pushLine();
+          continue;
+        }
+
+        // treat whitespace token: collapse leading spaces at line start
+        const isSpace = /^\s+$/.test(run.text);
+        if (isSpace) {
+          // if line empty, skip leading spaces
+          if (currentLine.length === 0) continue;
+        }
+
+        let token = run.text;
+        let tokenStyle = run.style;
+
+        // measure whole token
+        let tokenWidth = getWidth(token, tokenStyle);
+
+        // if token fits, append
+        if (currentLineWidth + tokenWidth <= maxWidth) {
+          currentLine.push({ text: token, style: tokenStyle });
+          currentLineWidth += tokenWidth;
+          continue;
+        }
+
+        // token doesn't fit
+        // if token is just whitespace -> push line and skip
+        if (isSpace) {
+          pushLine();
+          continue;
+        }
+
+        // if current line has content, flush it first
+        if (currentLine.length > 0) {
+          pushLine();
+        }
+
+        // If token itself is longer than maxWidth, break it into chunks
+        if (tokenWidth > maxWidth) {
+          let ptr = 0;
+          while (ptr < token.length) {
+            // build chunk that fits
+            let chunk = '';
+            let chunkWidth = 0;
+            // accumulate characters until exceed
+            while (ptr < token.length) {
+              const ch = token[ptr];
+              const w = getWidth(chunk + ch, tokenStyle);
+              if (chunk === '' && w > maxWidth) {
+                // single char is wider than line (rare) -> still place it
+                chunk = ch;
+                ptr++;
+                break;
+              }
+              if (w <= maxWidth) {
+                chunk += ch;
+                ptr++;
+              } else break;
+            }
+            // push chunk as a line
+            currentLine.push({ text: chunk, style: tokenStyle });
+            currentLineWidth = getWidth(chunk, tokenStyle);
+            pushLine();
+          }
+          continue;
+        }
+
+        // token shorter than maxWidth but didn't fit because line empty (should not happen)
+        currentLine.push({ text: token, style: tokenStyle });
+        currentLineWidth += tokenWidth;
+      }
+
+      if (currentLine.length > 0) pushLine();
+
+      // render lines
+      let y = startY;
+      for (let li = 0; li < lines.length; li++) {
+        let xPos = x;
+        const line = lines[li];
+        for (let ri = 0; ri < line.length; ri++) {
+          const seg = line[ri];
+          setFontForStyle(seg.style);
+          // draw text segment
+          doc.text(seg.text, xPos, y);
+          // underline if needed
+          if (seg.style.underline) {
+            const w = doc.getTextWidth(seg.text);
+            doc.setLineWidth(0.2);
+            doc.line(xPos, y + 1, xPos + w, y + 1);
+          }
+          xPos += doc.getTextWidth(seg.text);
+        }
+        y += lineHeight;
+      }
+
+      // restore normal font
+      doc.setFont("times", "normal");
+
+      return (y - startY);
+    };
+
+
+
     // Helper function to add image with variable height
     const addImage = async (imageData, imageHeight = 60) => {
       if (currentY + imageHeight > pageHeight - margin) {
@@ -156,15 +324,15 @@ export const printPaper = async (questions) => {
         doc.text(questionNumber, margin, currentY);
         
         doc.setFont("times", "normal");
-        const plainText = htmlToPlainText(question.text);
         
-        if (plainText) {
-          const textLines = doc.splitTextToSize(plainText, contentWidth - numberWidth - 5);
-          doc.text(textLines, margin + numberWidth, currentY);
-          currentY += (textLines.length * 6); 
-        }
-
-        currentY += 0; 
+        // Use formatted text rendering
+        const textHeight = renderFormattedText(
+          question.text,
+          margin + numberWidth,
+          currentY,
+          contentWidth - numberWidth - 5
+        );
+        currentY += textHeight;
 
         // Add main question image (60mm height)
         if (question.image) {
@@ -175,8 +343,6 @@ export const printPaper = async (questions) => {
         if (question.table) {
           addTable(question.table.data, question.table.cols);
         }
-
-        currentY += 0; 
       }
 
 
@@ -232,14 +398,17 @@ export const printPaper = async (questions) => {
           doc.text(subLabel, actualSubMargin, currentY);
           
           doc.setFont("times", "normal");
-          const subPlainText = htmlToPlainText(subQuestion.text);
           
-          if (subPlainText) {
+          if (subQuestion.text && subQuestion.text.trim()) {
             // Calculate available width from the sub-question starting position
             const availableWidth = (pageWidth - margin) - (actualSubMargin + subLabelWidth);
-            const subTextLines = doc.splitTextToSize(subPlainText, availableWidth);
-            doc.text(subTextLines, actualSubMargin + subLabelWidth, currentY);
-            currentY += (subTextLines.length * 6);
+            const textHeight = renderFormattedText(
+              subQuestion.text,
+              actualSubMargin + subLabelWidth,
+              currentY,
+              availableWidth
+            );
+            currentY += textHeight;
           } else {
             currentY += 6;
           }
@@ -328,14 +497,17 @@ export const printPaper = async (questions) => {
               doc.text(nestedLabel, nestedMargin, currentY);
               
               doc.setFont("times", "normal");
-              const nestedPlainText = htmlToPlainText(nestedSub.text);
               
-              if (nestedPlainText) {
+              if (nestedSub.text && nestedSub.text.trim()) {
                 // Calculate available width from the nested sub-question starting position
                 const availableWidth = (pageWidth - margin) - (nestedMargin + nestedLabelWidth);
-                const nestedTextLines = doc.splitTextToSize(nestedPlainText, availableWidth);
-                doc.text(nestedTextLines, nestedMargin + nestedLabelWidth, currentY);
-                currentY += (nestedTextLines.length * 6);
+                const textHeight = renderFormattedText(
+                  nestedSub.text,
+                  nestedMargin + nestedLabelWidth,
+                  currentY,
+                  availableWidth
+                );
+                currentY += textHeight;
               } else {
                 currentY += 6;
               }
