@@ -266,14 +266,56 @@ export const printPaper = async (questions) => {
               const nestedLabel = `${getRomanNumeral(nestedIdx)}) `;
               const nestedLabelWidth = doc.getTextWidth(nestedLabel);
               
-              // Calculate nested margin based on whether main question exists
+              // Check if parent sub-question is empty
+              const isSubQuestionEmpty = !subQuestion.text || subQuestion.text.trim() === '';
+              
+              // Calculate nested margin based on whether main question exists and sub-question is empty
               let nestedMargin;
-              if (!hasMainQuestionText) {
-                const questionNumber = `${question.id}. `;
-                const questionNumberWidth = doc.getTextWidth(questionNumber);
-                nestedMargin = margin + questionNumberWidth + extraIndent + 10;
+              
+              if (isSubQuestionEmpty && nestedIdx === 0) {
+                // First nested sub-question when parent sub-question is empty
+                // Place it on the same line as the sub-question label
+                if (!hasMainQuestionText) {
+                  const questionNumber = `${question.id}. `;
+                  const questionNumberWidth = doc.getTextWidth(questionNumber);
+                  const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
+                  const subLabelTextWidth = doc.getTextWidth(subLabelText);
+                  
+                  // Move back up to the sub-question line
+                  currentY -= 8; // Move back up (6 from empty line + 2 from spacing)
+                  
+                  nestedMargin = margin + questionNumberWidth + extraIndent + subLabelTextWidth + 3;
+                } else {
+                  const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
+                  const subLabelTextWidth = doc.getTextWidth(subLabelText);
+                  
+                  // Move back up to the sub-question line
+                  currentY -= 8; // Move back up
+                  
+                  nestedMargin = actualSubMargin + subLabelTextWidth + 3;
+                }
+              } else if (isSubQuestionEmpty && nestedIdx > 0) {
+                // Subsequent nested sub-questions align with the first one
+                if (!hasMainQuestionText) {
+                  const questionNumber = `${question.id}. `;
+                  const questionNumberWidth = doc.getTextWidth(questionNumber);
+                  const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
+                  const subLabelTextWidth = doc.getTextWidth(subLabelText);
+                  nestedMargin = margin + questionNumberWidth + extraIndent + subLabelTextWidth + 3;
+                } else {
+                  const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
+                  const subLabelTextWidth = doc.getTextWidth(subLabelText);
+                  nestedMargin = actualSubMargin + subLabelTextWidth + 3;
+                }
               } else {
-                nestedMargin = margin + 20;
+                // Normal nested sub-question indentation
+                if (!hasMainQuestionText) {
+                  const questionNumber = `${question.id}. `;
+                  const questionNumberWidth = doc.getTextWidth(questionNumber);
+                  nestedMargin = margin + questionNumberWidth + extraIndent + 10;
+                } else {
+                  nestedMargin = margin + 20;
+                }
               }
               
               doc.text(nestedLabel, nestedMargin, currentY);
