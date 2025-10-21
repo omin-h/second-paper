@@ -66,49 +66,105 @@ export const printPaper = async (questions) => {
 
 
     // NEW: Parse and render HTML with formatting
-    // Improved HTML -> formatted wrapped text renderer (with small width slack)
+    // Enhanced HTML -> formatted wrapped text renderer
+    // Adds support for <span style="..."> and <ul>/<ol>/<li> lists (nested).
     const renderFormattedText = (html, x, startY, maxWidth) => {
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(html, 'text/html');
       const body = htmlDoc.body;
 
-      // collect runs of text with style
-      const runs = [];
-      const collect = (node, style = { bold: false, italic: false, underline: false }) => {
+      // Tokens: { type: 'text'|'newline'|'liStart'|'liEnd', text?, style?, listType?, level?, index? }
+      const tokens = [];
+
+      const parseInlineStyle = (styleString, baseStyle) => {
+        const s = { ...baseStyle };
+        if (!styleString) return s;
+        const parts = styleString.split(';').map(p => p.trim()).filter(Boolean);
+        for (const p of parts) {
+          const [k, v] = p.split(':').map(t => t.trim().toLowerCase());
+          if (!k) continue;
+          if (k === 'font-weight' && (v === 'bold' || +v >= 700)) s.bold = true;
+          if (k === 'font-style' && v === 'italic') s.italic = true;
+          if (k === 'text-decoration' && v.includes('underline')) s.underline = true;
+        }
+        return s;
+      };
+
+      const collect = (node, style = { bold: false, italic: false, underline: false }, listStack = []) => {
         if (!node) return;
+
         if (node.nodeType === Node.TEXT_NODE) {
           const text = node.textContent;
           if (!text) return;
-          // keep spaces as tokens
-          const tokens = text.match(/\S+|\s+/g) || [];
-          tokens.forEach(t => runs.push({ text: t, style: { ...style } }));
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          // keep words and whitespace tokens
+          const toks = text.match(/\S+|\s+/g) || [];
+          toks.forEach(t => tokens.push({ type: 'text', text: t, style: { ...style } }));
+          return;
+        }
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
           const tag = node.tagName.toLowerCase();
-          const newStyle = { ...style };
+
+          // handle span style parsing
+          let newStyle = { ...style };
           if (tag === 'b' || tag === 'strong') newStyle.bold = true;
           if (tag === 'i' || tag === 'em') newStyle.italic = true;
           if (tag === 'u') newStyle.underline = true;
-          if (tag === 'br') {
-            runs.push({ text: '\n', style: { ...style } });
-          } else {
-            node.childNodes.forEach(child => collect(child, newStyle));
-            if (tag === 'p') runs.push({ text: '\n', style: { ...style } });
+          if (tag === 'span') {
+            const st = node.getAttribute('style');
+            newStyle = parseInlineStyle(st, newStyle);
           }
+
+          if (tag === 'br') {
+            tokens.push({ type: 'newline' });
+            return;
+          }
+
+          if (tag === 'p') {
+            // ensure paragraph separation
+            node.childNodes.forEach(child => collect(child, newStyle, listStack));
+            tokens.push({ type: 'newline' });
+            tokens.push({ type: 'newline' });
+            return;
+          }
+
+          if (tag === 'ul' || tag === 'ol') {
+            // push list context
+            const listType = tag === 'ul' ? 'ul' : 'ol';
+            // create a fresh counter for this level if ol
+            const frame = { type: listType, counter: 0 };
+            const newStack = [...listStack, frame];
+            node.childNodes.forEach(child => collect(child, newStyle, newStack));
+            return;
+          }
+
+          if (tag === 'li') {
+            // list item: find current list frame
+            const frame = listStack[listStack.length - 1] || { type: 'ul', counter: 0 };
+            if (frame.type === 'ol') frame.counter = (frame.counter || 0) + 1;
+            const level = listStack.length - 1 >= 0 ? listStack.length - 1 : 0;
+            tokens.push({
+              type: 'liStart',
+              listType: frame.type,
+              level,
+              index: frame.type === 'ol' ? frame.counter : undefined
+            });
+            node.childNodes.forEach(child => collect(child, newStyle, listStack));
+            tokens.push({ type: 'liEnd' });
+            return;
+          }
+
+          // default: process children (including span with inline styles handled above)
+          node.childNodes.forEach(child => collect(child, newStyle, listStack));
         }
       };
-      body.childNodes.forEach(node => collect(node));
 
-      const SLACK = 0.5; // small tolerance (mm) to avoid wrapping on tiny differences
+      // start collection
+      body.childNodes.forEach(n => collect(n));
+
+      // rendering / line-wrapping logic with support for per-line indent (for lists)
+      const SLACK = 0.5;
       const lineHeight = 6;
-      const lines = [];
-      let currentLine = [];
-      let currentLineWidth = 0;
-
-      const pushLine = () => {
-        lines.push(currentLine);
-        currentLine = [];
-        currentLineWidth = 0;
-      };
 
       const setFontForStyle = (s) => {
         if (s.bold && s.italic) doc.setFont("times", "bolditalic");
@@ -117,105 +173,129 @@ export const printPaper = async (questions) => {
         else doc.setFont("times", "normal");
       };
 
-      // helper to get width for text with style
       const getWidth = (text, style) => {
-        const prevFont = doc.getFont();
-        setFontForStyle(style);
+        const prev = doc.getFont();
+        setFontForStyle(style || { });
         const w = doc.getTextWidth(text);
-        doc.setFont(prevFont.fontName, prevFont.fontStyle);
+        doc.setFont(prev.fontName, prev.fontStyle);
         return w;
       };
 
-      // iterate tokens and build lines
-      for (let i = 0; i < runs.length; i++) {
-        const run = runs[i];
+      const lines = [];
+      let currentLine = [];
+      let currentLineWidth = 0;
+      // indent applied at line start (mm)
+      let pendingIndent = 0; // set when a liStart encountered; applied to first token on new line
+      let activeIndent = 0; // current line's indent
+      const pushLine = () => {
+        lines.push({ segments: currentLine, indent: activeIndent });
+        currentLine = [];
+        currentLineWidth = 0;
+        activeIndent = 0;
+        pendingIndent = 0;
+      };
 
-        // handle explicit newlines
-        if (run.text === '\n') {
-          pushLine();
-          continue;
+      // helper to append a token (word or whitespace) respecting wrap
+      const appendToken = (tokenText, tokenStyle) => {
+        // collapse leading spaces in a new empty line
+        if (/^\s+$/.test(tokenText) && currentLine.length === 0) return;
+
+        // ensure activeIndent applied for empty line if pending
+        if (currentLine.length === 0 && pendingIndent) {
+          activeIndent = pendingIndent;
+          pendingIndent = 0;
         }
 
-        // treat whitespace token: collapse leading spaces at line start
-        const isSpace = /^\s+$/.test(run.text);
-        if (isSpace) {
-          // if line empty, skip leading spaces
-          if (currentLine.length === 0) continue;
-        }
+        const effectiveMax = maxWidth - (activeIndent || 0);
+        const w = getWidth(tokenText, tokenStyle);
 
-        let token = run.text;
-        let tokenStyle = run.style;
-
-        // measure whole token
-        let tokenWidth = getWidth(token, tokenStyle);
-
-        // if token fits, append (allow small slack)
-        if (currentLineWidth + tokenWidth <= maxWidth + SLACK) {
-          currentLine.push({ text: token, style: tokenStyle });
-          currentLineWidth += tokenWidth;
-          continue;
+        if (currentLineWidth + w <= effectiveMax + SLACK) {
+          currentLine.push({ text: tokenText, style: tokenStyle });
+          currentLineWidth += w;
+          return;
         }
 
         // token doesn't fit
-        // if token is just whitespace -> push line and skip
-        if (isSpace) {
+        if (/^\s+$/.test(tokenText)) {
+          // whitespace that doesn't fit -> new line
           pushLine();
-          continue;
+          return;
         }
 
-        // if current line has content, flush it first
+        // if line already has content, flush it first then place token
         if (currentLine.length > 0) {
           pushLine();
         }
 
-        // If token itself is longer than maxWidth (account slack), break it into chunks
-        if (tokenWidth > maxWidth + SLACK) {
+        // if token still too long for a single line, break into chars
+        if (w > effectiveMax + SLACK) {
           let ptr = 0;
-          while (ptr < token.length) {
-            // build chunk that fits
+          while (ptr < tokenText.length) {
             let chunk = '';
-            // accumulate characters until exceed
-            while (ptr < token.length) {
-              const ch = token[ptr];
-              const w = getWidth(chunk + ch, tokenStyle);
-              if (chunk === '' && w > maxWidth + SLACK) {
-                // single char is wider than line (rare) -> still place it
-                chunk = ch;
-                ptr++;
-                break;
-              }
-              if (w <= maxWidth + SLACK) {
-                chunk += ch;
+            while (ptr < tokenText.length) {
+              const ch = tokenText[ptr];
+              const test = chunk + ch;
+              const tw = getWidth(test, tokenStyle);
+              if (tw <= effectiveMax + SLACK) {
+                chunk = test;
                 ptr++;
               } else break;
             }
-            // push chunk as a line
+            if (chunk === '') {
+              // place at least one char
+              chunk = tokenText[ptr++];
+            }
             currentLine.push({ text: chunk, style: tokenStyle });
             currentLineWidth = getWidth(chunk, tokenStyle);
             pushLine();
           }
-          continue;
+          return;
         }
 
-        // token shorter than maxWidth but didn't fit due to rounding — place it on new line
-        currentLine.push({ text: token, style: tokenStyle });
-        currentLineWidth += tokenWidth;
+        // fits on empty line
+        currentLine.push({ text: tokenText, style: tokenStyle });
+        currentLineWidth += w;
+      };
+
+      // process collected tokens
+      for (let i = 0; i < tokens.length; i++) {
+        const tk = tokens[i];
+        if (tk.type === 'newline') {
+          pushLine();
+          continue;
+        }
+        if (tk.type === 'liStart') {
+          // start new list line, set pending indent (6mm per level)
+          pushLine();
+          pendingIndent = 6 * (tk.level + 1);
+          // add bullet/number as first token on new line (will use pendingIndent as activeIndent)
+          const bullet = tk.listType === 'ul' ? '• ' : `${tk.index}. `;
+          // push bullet token (as text) but ensure activeIndent will be set when appended
+          appendToken(bullet, { bold: false, italic: false, underline: false });
+          continue;
+        }
+        if (tk.type === 'liEnd') {
+          // finish current list item
+          pushLine();
+          continue;
+        }
+        if (tk.type === 'text') {
+          appendToken(tk.text, tk.style);
+        }
       }
 
       if (currentLine.length > 0) pushLine();
 
-      // render lines
+      // render lines to doc
       let y = startY;
       for (let li = 0; li < lines.length; li++) {
-        let xPos = x;
         const line = lines[li];
-        for (let ri = 0; ri < line.length; ri++) {
-          const seg = line[ri];
-          setFontForStyle(seg.style);
-          // draw text segment
+        let xPos = x + (line.indent || 0);
+        for (let si = 0; si < line.segments.length; si++) {
+          const seg = line.segments[si];
+          setFontForStyle(seg.style || {});
           doc.text(seg.text, xPos, y);
-          // underline if needed
-          if (seg.style.underline) {
+          if (seg.style && seg.style.underline) {
             const w = doc.getTextWidth(seg.text);
             doc.setLineWidth(0.2);
             doc.line(xPos, y + 1, xPos + w, y + 1);
@@ -225,9 +305,7 @@ export const printPaper = async (questions) => {
         y += lineHeight;
       }
 
-      // restore normal font
       doc.setFont("times", "normal");
-
       return (y - startY);
     };
 
