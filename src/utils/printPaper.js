@@ -8,7 +8,7 @@ export const printPaper = async (questions) => {
       orientation: "portrait"
     });
 
-
+   //------------Initializes jsPDF, page metrics----------------//
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 10;
@@ -17,7 +17,7 @@ export const printPaper = async (questions) => {
 
 
 
-    // Helper function to draw page border with rounded corners
+    //------------Page Border with Rounded Corners----------------//
     const drawPageBorder = () => {
       doc.setDrawColor(0, 0, 0); // Black color
       doc.setLineWidth(0.1); // Border thickness
@@ -30,23 +30,21 @@ export const printPaper = async (questions) => {
       // Draw rounded rectangle
       doc.roundedRect(borderMargin, borderMargin, borderWidth, borderHeight, cornerRadius, cornerRadius);
     };
-
     // Draw border on first page
     drawPageBorder();
 
 
-    // Set default font
+    //------------Default Font Settings----------------//
     doc.setFont("times", "normal");
     doc.setFontSize(12);
 
 
 
+    //------------Question Numbering Labels----------------//
     // Helper function to get sub-question label
     const getSubQuestionLabel = (index) => {
       return String.fromCharCode(97 + index); 
     };
-
-
 
     // Helper function to get roman numeral
     const getRomanNumeral = (index) => {
@@ -56,18 +54,8 @@ export const printPaper = async (questions) => {
 
 
 
-    // // Helper function to convert HTML to plain text
-    // const htmlToPlainText = (html) => {
-    //   const tempDiv = document.createElement('div');
-    //   tempDiv.innerHTML = html;
-    //   return tempDiv.textContent || tempDiv.innerText || "";
-    // };
 
-
-
-    // NEW: Parse and render HTML with formatting
-    // Enhanced HTML -> formatted wrapped text renderer
-    // Adds support for <span style="..."> and <ul>/<ol>/<li> lists (nested).
+    //------------HTML Text Rendering with Basic Styles and Lists----------------//
     const renderFormattedText = (html, x, startY, maxWidth) => {
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(html, 'text/html');
@@ -161,6 +149,10 @@ export const printPaper = async (questions) => {
 
       // start collection
       body.childNodes.forEach(n => collect(n));
+
+
+
+
 
       // rendering / line-wrapping logic with support for per-line indent (for lists)
       const SLACK = 0.5;
@@ -311,7 +303,9 @@ export const printPaper = async (questions) => {
 
 
 
-    // Helper function to add image with variable height
+
+    //------------Main Content Rendering----------------//
+    // image
     const addImage = async (imageData, imageHeight = 60) => {
       if (currentY + imageHeight > pageHeight - margin) {
         doc.addPage();
@@ -338,7 +332,7 @@ export const printPaper = async (questions) => {
 
 
 
-    // Helper function to add table
+    // table
     const addTable = (tableData, tableCols) => {
       const tableWidth = contentWidth * 0.7; 
       const colWidth = tableWidth / tableCols;
