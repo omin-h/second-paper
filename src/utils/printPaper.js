@@ -56,129 +56,14 @@ export const printPaper = async (questions) => {
 
 
 
-    // Helper function to parse and render rich text
-    const renderRichText = (html, startX, startY, maxWidth) => {
-      if (!html) return startY;
-
+    // Helper function to convert HTML to plain text
+    const htmlToPlainText = (html) => {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
-      
-      let currentX = startX;
-      let currentLineY = startY;
-      const lineHeight = 6;
-      const spaceWidth = doc.getTextWidth(' ');
-      
-      const processNode = (node) => {
-        if (node.nodeType === Node.TEXT_NODE) {
-          const text = node.textContent;
-          if (!text || text.trim() === '') {
-            if (text === ' ') currentX += spaceWidth;
-            return;
-          }
-          
-          const words = text.split(/(\s+)/);
-          
-          words.forEach(word => {
-            if (word === '') return;
-            
-            if (/^\s+$/.test(word)) {
-              currentX += spaceWidth * word.length;
-              return;
-            }
-            
-            const wordWidth = doc.getTextWidth(word);
-            
-            if (currentX + wordWidth > startX + maxWidth) {
-              currentLineY += lineHeight;
-              currentX = startX;
-              
-              if (currentLineY > pageHeight - margin - 20) {
-                doc.addPage();
-                drawPageBorder();
-                currentLineY = margin;
-              }
-            }
-            
-            doc.text(word, currentX, currentLineY);
-            currentX += wordWidth;
-          });
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-          const tagName = node.tagName.toLowerCase();
-          
-          // Save current font state
-          const currentFont = doc.getFont();
-          const currentFontSize = doc.getFontSize();
-          
-          // Handle different HTML tags
-          switch (tagName) {
-            case 'strong':
-            case 'b':
-              doc.setFont("times", "bold");
-              break;
-            case 'em':
-            case 'i':
-              doc.setFont("times", "italic");
-              break;
-            case 'u':
-              // Underline is applied after text
-              break;
-            case 'br':
-              currentLineY += lineHeight;
-              currentX = startX;
-              if (currentLineY > pageHeight - margin - 20) {
-                doc.addPage();
-                drawPageBorder();
-                currentLineY = margin;
-              }
-              return;
-            case 'p':
-              if (currentX > startX) {
-                currentLineY += lineHeight;
-                currentX = startX;
-              }
-              break;
-            case 'ul':
-            case 'ol':
-              currentLineY += lineHeight * 0.5;
-              break;
-            case 'li':
-              if (currentX > startX) {
-                currentLineY += lineHeight;
-              }
-              currentX = startX + 5;
-              const bullet = node.parentElement.tagName === 'UL' ? '• ' : `${Array.from(node.parentElement.children).indexOf(node) + 1}. `;
-              doc.text(bullet, startX, currentLineY);
-              break;
-          }
-          
-          // Process child nodes
-          let underlineStart = currentX;
-          Array.from(node.childNodes).forEach(child => processNode(child));
-          
-          // Apply underline if needed
-          if (tagName === 'u' && currentX > underlineStart) {
-            const underlineY = currentLineY + 0.5;
-            doc.line(underlineStart, underlineY, currentX, underlineY);
-          }
-          
-          // Restore font state
-          doc.setFont(currentFont.fontName, currentFont.fontStyle);
-          doc.setFontSize(currentFontSize);
-          
-          // Add spacing after block elements
-          if (['p', 'ul', 'ol', 'li'].includes(tagName)) {
-            if (tagName === 'p' || tagName === 'ul' || tagName === 'ol') {
-              currentLineY += lineHeight * 0.5;
-            }
-            currentX = startX;
-          }
-        }
-      };
-      
-      Array.from(tempDiv.childNodes).forEach(node => processNode(node));
-      
-      return currentLineY + lineHeight;
+      return tempDiv.textContent || tempDiv.innerText || "";
     };
+
+
 
     // Helper function to add image with variable height
     const addImage = async (imageData, imageHeight = 60) => {
@@ -271,9 +156,12 @@ export const printPaper = async (questions) => {
         doc.text(questionNumber, margin, currentY);
         
         doc.setFont("times", "normal");
+        const plainText = htmlToPlainText(question.text);
         
-        if (question.text) {
-          currentY = renderRichText(question.text, margin + numberWidth, currentY, contentWidth - numberWidth - 5);
+        if (plainText) {
+          const textLines = doc.splitTextToSize(plainText, contentWidth - numberWidth - 5);
+          doc.text(textLines, margin + numberWidth, currentY);
+          currentY += (textLines.length * 6); 
         }
 
         currentY += 0; 
@@ -344,10 +232,14 @@ export const printPaper = async (questions) => {
           doc.text(subLabel, actualSubMargin, currentY);
           
           doc.setFont("times", "normal");
+          const subPlainText = htmlToPlainText(subQuestion.text);
           
-          if (subQuestion.text && subQuestion.text.trim() !== '') {
+          if (subPlainText) {
+            // Calculate available width from the sub-question starting position
             const availableWidth = (pageWidth - margin) - (actualSubMargin + subLabelWidth);
-            currentY = renderRichText(subQuestion.text, actualSubMargin + subLabelWidth, currentY, availableWidth);
+            const subTextLines = doc.splitTextToSize(subPlainText, availableWidth);
+            doc.text(subTextLines, actualSubMargin + subLabelWidth, currentY);
+            currentY += (subTextLines.length * 6);
           } else {
             currentY += 6;
           }
@@ -436,10 +328,14 @@ export const printPaper = async (questions) => {
               doc.text(nestedLabel, nestedMargin, currentY);
               
               doc.setFont("times", "normal");
+              const nestedPlainText = htmlToPlainText(nestedSub.text);
               
-              if (nestedSub.text && nestedSub.text.trim() !== '') {
+              if (nestedPlainText) {
+                // Calculate available width from the nested sub-question starting position
                 const availableWidth = (pageWidth - margin) - (nestedMargin + nestedLabelWidth);
-                currentY = renderRichText(nestedSub.text, nestedMargin + nestedLabelWidth, currentY, availableWidth);
+                const nestedTextLines = doc.splitTextToSize(nestedPlainText, availableWidth);
+                doc.text(nestedTextLines, nestedMargin + nestedLabelWidth, currentY);
+                currentY += (nestedTextLines.length * 6);
               } else {
                 currentY += 6;
               }
