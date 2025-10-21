@@ -603,6 +603,88 @@ export const printPaper = async (questions) => {
               }
 
               currentY += 1;
+
+              // Process Deep Nested Sub-Questions (a, b, c under i, ii, iii)
+              if (nestedSub.subQuestions && nestedSub.subQuestions.length > 0) {
+                const deepExtraIndent = 8; // extra indent for deep-level labels
+                let firstDeepPlacedOnSameLine = false;
+
+                for (let deepNestedIdx = 0; deepNestedIdx < nestedSub.subQuestions.length; deepNestedIdx++) {
+                  const deepNestedSub = nestedSub.subQuestions[deepNestedIdx];
+                  
+                  if (currentY > pageHeight - 40) {
+                    doc.addPage();
+                    drawPageBorder();
+                    currentY = margin;
+                  }
+
+                  doc.setFontSize(12);
+                  doc.setFont("times", "bold");
+                  
+                  const deepNestedLabel = `${getSubQuestionLabel(deepNestedIdx)}) `;
+                  const deepNestedLabelWidth = doc.getTextWidth(deepNestedLabel);
+                  
+                  // Check if parent nested sub-question is empty
+                  const isNestedSubQuestionEmpty = !nestedSub.text || nestedSub.text.trim() === '';
+                  
+                  let deepNestedMargin;
+
+                  // If nested is empty and this is the first deep item, place it on same line as nested label
+                  if (isNestedSubQuestionEmpty && deepNestedIdx === 0) {
+                    // Move currentY up to nested label line (only once)
+                    // nestedMargin and nestedLabelWidth exist in outer scope
+                    currentY -= 8; // undo the empty-line advance done earlier
+                    deepNestedMargin = nestedMargin + nestedLabelWidth + 3 + deepExtraIndent;
+                    firstDeepPlacedOnSameLine = true;
+                  } else if (isNestedSubQuestionEmpty && deepNestedIdx > 0 && firstDeepPlacedOnSameLine) {
+                    // subsequent deep items align with the first deep item on that same line
+                    deepNestedMargin = nestedMargin + nestedLabelWidth + 3 + deepExtraIndent;
+                  } else {
+                    // Normal deep nested indentation (indent relative to question number / sub-label)
+                    if (!hasMainQuestionText) {
+                      const questionNumber = `${question.id}. `;
+                      const questionNumberWidth = doc.getTextWidth(questionNumber);
+                      deepNestedMargin = margin + questionNumberWidth + extraIndent + 10 + deepExtraIndent;
+                    } else {
+                      deepNestedMargin = margin + 20 + deepExtraIndent;
+                    }
+                  }
+                  
+                  doc.text(deepNestedLabel, deepNestedMargin, currentY);
+                  
+                  doc.setFont("times", "normal");
+                  
+                  if (deepNestedSub.text && deepNestedSub.text.trim()) {
+                    // Calculate available width from the deep nested sub-question starting position
+                    const availableWidth = (pageWidth - margin) - (deepNestedMargin + deepNestedLabelWidth);
+                    const textHeight = renderFormattedText(
+                      deepNestedSub.text,
+                      deepNestedMargin + deepNestedLabelWidth,
+                      currentY,
+                      availableWidth
+                    );
+                    currentY += textHeight;
+                  } else {
+                    currentY += 6;
+                  }
+
+                  currentY += 1;
+
+                  // Add deep nested sub-question image (30mm height)
+                  if (deepNestedSub.image) {
+                    await addImage(deepNestedSub.image, 30);
+                  }
+
+                  // Add deep nested sub-question table
+                  if (deepNestedSub.table) {
+                    addTable(deepNestedSub.table.data, deepNestedSub.table.cols);
+                  }
+
+                  currentY += 1;
+                }
+              }
+
+              currentY += 1;
             }
           }
 

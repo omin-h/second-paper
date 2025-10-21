@@ -28,14 +28,9 @@ export default function SecondPaper() {
     }]);
   };
 
-
-  
   const updateQuestion = (id, text) => {
     setQuestions(questions.map(q => q.id === id ? { ...q, text } : q));
   };
-
-
-
 
   const deleteQuestion = (id) => {
     setQuestions(questions.filter(q => q.id !== id).map((q, index) => ({ 
@@ -44,17 +39,23 @@ export default function SecondPaper() {
     })));
   };
 
-
-
-
-  const handleImageUpload = (id, event, subIndex = null, nestedIndex = null) => {
+  const handleImageUpload = (id, event, subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => {
         setQuestions(questions.map(q => {
           if (q.id === id) {
-            if (subIndex !== null && nestedIndex !== null) {
+            if (subIndex !== null && nestedIndex !== null && deepNestedIndex !== null) {
+              // Update deep nested sub-question image (a, b, c under i, ii, iii)
+              const newSubQuestions = [...q.subQuestions];
+              const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+              const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
+              newDeepNestedSubQuestions[deepNestedIndex] = { ...newDeepNestedSubQuestions[deepNestedIndex], image: e.target.result };
+              newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
+              newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
+              return { ...q, subQuestions: newSubQuestions };
+            } else if (subIndex !== null && nestedIndex !== null) {
               // Update nested sub-question image
               const newSubQuestions = [...q.subQuestions];
               const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
@@ -78,13 +79,18 @@ export default function SecondPaper() {
     }
   };
 
-
-
-
-  const removeImage = (id, subIndex = null, nestedIndex = null) => {
+  const removeImage = (id, subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === id) {
-        if (subIndex !== null && nestedIndex !== null) {
+        if (subIndex !== null && nestedIndex !== null && deepNestedIndex !== null) {
+          const newSubQuestions = [...q.subQuestions];
+          const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+          const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
+          newDeepNestedSubQuestions[deepNestedIndex] = { ...newDeepNestedSubQuestions[deepNestedIndex], image: null };
+          newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
+          newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
+          return { ...q, subQuestions: newSubQuestions };
+        } else if (subIndex !== null && nestedIndex !== null) {
           const newSubQuestions = [...q.subQuestions];
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
           newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], image: null };
@@ -102,32 +108,31 @@ export default function SecondPaper() {
     }));
   };
 
-
-
-
-  const openTableModal = (id, subIndex = null, nestedIndex = null) => {
-    setShowTableModal({ questionId: id, subIndex, nestedIndex });
+  const openTableModal = (id, subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
+    setShowTableModal({ questionId: id, subIndex, nestedIndex, deepNestedIndex });
     setTableRows(3);
     setTableCols(3);
   };
 
-
-
-
   const createTable = () => {
-    const { questionId, subIndex, nestedIndex } = showTableModal;
+    const { questionId, subIndex, nestedIndex, deepNestedIndex } = showTableModal;
     const newTable = {
       rows: tableRows,
       cols: tableCols,
       data: Array(tableRows).fill(null).map(() => Array(tableCols).fill(''))
     };
-    
-
-
 
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
-        if (subIndex !== null && nestedIndex !== null) {
+        if (subIndex !== null && nestedIndex !== null && deepNestedIndex !== null) {
+          const newSubQuestions = [...q.subQuestions];
+          const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+          const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
+          newDeepNestedSubQuestions[deepNestedIndex] = { ...newDeepNestedSubQuestions[deepNestedIndex], table: newTable };
+          newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
+          newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
+          return { ...q, subQuestions: newSubQuestions };
+        } else if (subIndex !== null && nestedIndex !== null) {
           const newSubQuestions = [...q.subQuestions];
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
           newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], table: newTable };
@@ -146,13 +151,27 @@ export default function SecondPaper() {
     setShowTableModal(null);
   };
 
-
-
-
-  const updateTableCell = (questionId, rowIndex, colIndex, value, subIndex = null, nestedIndex = null) => {
+  const updateTableCell = (questionId, rowIndex, colIndex, value, subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
-        if (subIndex !== null && nestedIndex !== null && q.subQuestions[subIndex]?.subQuestions[nestedIndex]?.table) {
+        if (subIndex !== null && nestedIndex !== null && deepNestedIndex !== null && 
+            q.subQuestions[subIndex]?.subQuestions[nestedIndex]?.subQuestions[deepNestedIndex]?.table) {
+          const newSubQuestions = [...q.subQuestions];
+          const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+          const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
+          const newData = newDeepNestedSubQuestions[deepNestedIndex].table.data.map((row, rIdx) => 
+            rIdx === rowIndex 
+              ? row.map((cell, cIdx) => cIdx === colIndex ? value : cell)
+              : row
+          );
+          newDeepNestedSubQuestions[deepNestedIndex] = { 
+            ...newDeepNestedSubQuestions[deepNestedIndex], 
+            table: { ...newDeepNestedSubQuestions[deepNestedIndex].table, data: newData } 
+          };
+          newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
+          newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
+          return { ...q, subQuestions: newSubQuestions };
+        } else if (subIndex !== null && nestedIndex !== null && q.subQuestions[subIndex]?.subQuestions[nestedIndex]?.table) {
           const newSubQuestions = [...q.subQuestions];
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
           const newData = newNestedSubQuestions[nestedIndex].table.data.map((row, rIdx) => 
@@ -191,13 +210,18 @@ export default function SecondPaper() {
     }));
   };
 
-
-
-
-  const removeTable = (id, subIndex = null, nestedIndex = null) => {
+  const removeTable = (id, subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === id) {
-        if (subIndex !== null && nestedIndex !== null) {
+        if (subIndex !== null && nestedIndex !== null && deepNestedIndex !== null) {
+          const newSubQuestions = [...q.subQuestions];
+          const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+          const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
+          newDeepNestedSubQuestions[deepNestedIndex] = { ...newDeepNestedSubQuestions[deepNestedIndex], table: null };
+          newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
+          newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
+          return { ...q, subQuestions: newSubQuestions };
+        } else if (subIndex !== null && nestedIndex !== null) {
           const newSubQuestions = [...q.subQuestions];
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
           newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], table: null };
@@ -215,25 +239,35 @@ export default function SecondPaper() {
     }));
   };
 
-
-
-
-  const addSubQuestion = (questionId, subIndex = null) => {
+  const addSubQuestion = (questionId, subIndex = null, nestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
-        if (subIndex !== null) {
-          // Add nested sub-question
+        if (nestedIndex !== null) {
+          // Add deep nested sub-question (a, b, c under i, ii, iii)
+          const newSubQuestions = [...q.subQuestions];
+          const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+          if (!newNestedSubQuestions[nestedIndex].subQuestions) {
+            newNestedSubQuestions[nestedIndex].subQuestions = [];
+          }
+          newNestedSubQuestions[nestedIndex].subQuestions = [
+            ...newNestedSubQuestions[nestedIndex].subQuestions,
+            { text: "", image: null, table: null }
+          ];
+          newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
+          return { ...q, subQuestions: newSubQuestions };
+        } else if (subIndex !== null) {
+          // Add nested sub-question (i, ii, iii under a, b, c)
           const newSubQuestions = [...q.subQuestions];
           if (!newSubQuestions[subIndex].subQuestions) {
             newSubQuestions[subIndex].subQuestions = [];
           }
           newSubQuestions[subIndex].subQuestions = [
             ...newSubQuestions[subIndex].subQuestions,
-            { text: "", image: null, table: null }
+            { text: "", image: null, table: null, subQuestions: [] }
           ];
           return { ...q, subQuestions: newSubQuestions };
         } else {
-          // Add main sub-question
+          // Add main sub-question (a, b, c under main question)
           const newSubQuestions = [...q.subQuestions, { 
             text: "", 
             image: null, 
@@ -247,14 +281,17 @@ export default function SecondPaper() {
     }));
   };
 
-
-
-
-  const updateSubQuestion = (questionId, subIndex, text, nestedIndex = null) => {
+  const updateSubQuestion = (questionId, subIndex, text, nestedIndex = null, deepNestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
         const newSubQuestions = [...q.subQuestions];
-        if (nestedIndex !== null) {
+        if (deepNestedIndex !== null) {
+          const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+          const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
+          newDeepNestedSubQuestions[deepNestedIndex] = { ...newDeepNestedSubQuestions[deepNestedIndex], text };
+          newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
+          newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
+        } else if (nestedIndex !== null) {
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
           newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], text };
           newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
@@ -267,14 +304,14 @@ export default function SecondPaper() {
     }));
   };
 
-
-
-
-  const deleteSubQuestion = (questionId, subIndex, nestedIndex = null) => {
+  const deleteSubQuestion = (questionId, subIndex, nestedIndex = null, deepNestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
         const newSubQuestions = [...q.subQuestions];
-        if (nestedIndex !== null) {
+        if (deepNestedIndex !== null) {
+          newSubQuestions[subIndex].subQuestions[nestedIndex].subQuestions = 
+            newSubQuestions[subIndex].subQuestions[nestedIndex].subQuestions.filter((_, idx) => idx !== deepNestedIndex);
+        } else if (nestedIndex !== null) {
           newSubQuestions[subIndex].subQuestions = newSubQuestions[subIndex].subQuestions.filter((_, idx) => idx !== nestedIndex);
         } else {
           return { ...q, subQuestions: q.subQuestions.filter((_, idx) => idx !== subIndex) };
@@ -285,23 +322,14 @@ export default function SecondPaper() {
     }));
   };
 
-
-
-
   const getSubQuestionLabel = (index) => {
     return String.fromCharCode(97 + index); // a, b, c, d...
   };
-
-
-
 
   const getRomanNumeral = (index) => {
     const romanNumerals = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
     return romanNumerals[index] || `(${index + 1})`;
   };
-
-
-
 
   const handlePrint = async () => {
     setIsPrinting(true);
@@ -313,30 +341,26 @@ export default function SecondPaper() {
     }
   };
 
-
-
-
-  const renderQuestionBlock = (question, questionId, level = 'main', subIndex = null, nestedIndex = null) => {
+  const renderQuestionBlock = (question, questionId, level = 'main', subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
     let label;
-    if (level === 'nested') {
+    if (level === 'deepNested') {
+      label = getSubQuestionLabel(deepNestedIndex);
+    } else if (level === 'nested') {
       label = getRomanNumeral(nestedIndex);
     } else if (level === 'sub') {
       label = getSubQuestionLabel(subIndex);
     } else {
       label = question.id;
     }
-    
-
-
-
-
 
     return (
       <div className={level !== 'main' ? "sub-question-container" : ""}>
         <RichTextEditor
           value={question.text}
           onChange={(text) => {
-            if (level === 'nested') {
+            if (level === 'deepNested') {
+              updateSubQuestion(questionId, subIndex, text, nestedIndex, deepNestedIndex);
+            } else if (level === 'nested') {
               updateSubQuestion(questionId, subIndex, text, nestedIndex);
             } else if (level === 'sub') {
               updateSubQuestion(questionId, subIndex, text);
@@ -345,7 +369,9 @@ export default function SecondPaper() {
             }
           }}
           placeholder={
-            level === 'nested' 
+            level === 'deepNested'
+              ? `Type deep nested sub-question ${label} here...`
+              : level === 'nested' 
               ? `Type nested sub-question ${label} here...`
               : level === 'sub'
               ? `Type sub-question ${label} here...`
@@ -358,14 +384,14 @@ export default function SecondPaper() {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => handleImageUpload(questionId, e, subIndex, nestedIndex)}
+              onChange={(e) => handleImageUpload(questionId, e, subIndex, nestedIndex, deepNestedIndex)}
               className="image-upload-input"
             />
             📷 Add Image
           </label>
 
           <button
-            onClick={() => openTableModal(questionId, subIndex, nestedIndex)}
+            onClick={() => openTableModal(questionId, subIndex, nestedIndex, deepNestedIndex)}
             className="table-add-button"
           >
             📊 Add Table
@@ -389,6 +415,15 @@ export default function SecondPaper() {
             </button>
           )}
 
+          {level === 'nested' && (
+            <button
+              onClick={() => addSubQuestion(questionId, subIndex, nestedIndex)}
+              className="deep-nested-sub-question-button"
+            >
+              ➕ Add Sub Question
+            </button>
+          )}
+
           {question.image && (
             <div className="image-preview-container">
               <img 
@@ -397,7 +432,7 @@ export default function SecondPaper() {
                 className="uploaded-image"
               />
               <button
-                onClick={() => removeImage(questionId, subIndex, nestedIndex)}
+                onClick={() => removeImage(questionId, subIndex, nestedIndex, deepNestedIndex)}
                 className="remove-image-button"
               >
                 ✖ Remove Image
@@ -410,7 +445,7 @@ export default function SecondPaper() {
               <div className="table-header">
                 <h4>Table ({question.table.rows} × {question.table.cols})</h4>
                 <button
-                  onClick={() => removeTable(questionId, subIndex, nestedIndex)}
+                  onClick={() => removeTable(questionId, subIndex, nestedIndex, deepNestedIndex)}
                   className="remove-table-button"
                 >
                   ✖ Remove Table
@@ -425,7 +460,7 @@ export default function SecondPaper() {
                           <input
                             type="text"
                             value={cell}
-                            onChange={(e) => updateTableCell(questionId, rowIndex, colIndex, e.target.value, subIndex, nestedIndex)}
+                            onChange={(e) => updateTableCell(questionId, rowIndex, colIndex, e.target.value, subIndex, nestedIndex, deepNestedIndex)}
                             className="table-cell-input"
                           />
                         </td>
@@ -495,6 +530,24 @@ export default function SecondPaper() {
                         </button>
                       </div>
                       {renderQuestionBlock(nestedSub, question.id, 'nested', subIndex, nestedIndex)}
+
+                      {/* Render Deep Nested Sub Questions (a, b, c under i, ii, iii) */}
+                      {nestedSub.subQuestions && nestedSub.subQuestions.map((deepNestedSub, deepNestedIndex) => (
+                        <div key={deepNestedIndex} className="deep-nested-sub-question-wrapper">
+                          <div className="deep-nested-sub-question-header">
+                            <h5 className="deep-nested-sub-question-title">
+                              {getSubQuestionLabel(deepNestedIndex)}.
+                            </h5>
+                            <button
+                              onClick={() => deleteSubQuestion(question.id, subIndex, nestedIndex, deepNestedIndex)}
+                              className="delete-deep-nested-button"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                          {renderQuestionBlock(deepNestedSub, question.id, 'deepNested', subIndex, nestedIndex, deepNestedIndex)}
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -614,39 +667,79 @@ export default function SecondPaper() {
 
                       {/* Render Nested Sub Questions */}
                       {subQuestion.subQuestions && subQuestion.subQuestions.map((nestedSub, nestedIndex) => (
-                        <div key={nestedIndex} className="preview-question preview-nested-sub-question">
-                          <div className="question-number nested-sub-question-number">
-                            {getRomanNumeral(nestedIndex)})
+                        <div key={nestedIndex}>
+                          <div className="preview-question preview-nested-sub-question">
+                            <div className="question-number nested-sub-question-number">
+                              {getRomanNumeral(nestedIndex)})
+                            </div>
+                            <div className="question-content">
+                              <div dangerouslySetInnerHTML={{ 
+                                __html: nestedSub.text || `<em style='color: #999;'>No nested sub-question ${getRomanNumeral(nestedIndex)} yet...</em>` 
+                              }} />
+                              {nestedSub.image && (
+                                <div className="preview-image-container">
+                                  <img 
+                                    src={nestedSub.image} 
+                                    alt={`Nested sub-question ${getRomanNumeral(nestedIndex)}`}
+                                    className="preview-image"
+                                  />
+                                </div>
+                              )}
+                              {nestedSub.table && (
+                                <div className="preview-table-container">
+                                  <table className="preview-table">
+                                    <tbody>
+                                      {nestedSub.table.data.map((row, rowIndex) => (
+                                        <tr key={rowIndex}>
+                                          {row.map((cell, colIndex) => (
+                                            <td key={colIndex}>{cell || '\u00A0'}</td>
+                                          ))}
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="question-content">
-                            <div dangerouslySetInnerHTML={{ 
-                              __html: nestedSub.text || `<em style='color: #999;'>No nested sub-question ${getRomanNumeral(nestedIndex)} yet...</em>` 
-                            }} />
-                            {nestedSub.image && (
-                              <div className="preview-image-container">
-                                <img 
-                                  src={nestedSub.image} 
-                                  alt={`Nested sub-question ${getRomanNumeral(nestedIndex)}`}
-                                  className="preview-image"
-                                />
+
+                          {/* Render Deep Nested Sub Questions (a, b, c) */}
+                          {nestedSub.subQuestions && nestedSub.subQuestions.map((deepNestedSub, deepNestedIndex) => (
+                            <div key={deepNestedIndex} className="preview-question preview-deep-nested-sub-question">
+                              <div className="question-number deep-nested-sub-question-number">
+                                {getSubQuestionLabel(deepNestedIndex)})
                               </div>
-                            )}
-                            {nestedSub.table && (
-                              <div className="preview-table-container">
-                                <table className="preview-table">
-                                  <tbody>
-                                    {nestedSub.table.data.map((row, rowIndex) => (
-                                      <tr key={rowIndex}>
-                                        {row.map((cell, colIndex) => (
-                                          <td key={colIndex}>{cell || '\u00A0'}</td>
+                              <div className="question-content">
+                                <div dangerouslySetInnerHTML={{ 
+                                  __html: deepNestedSub.text || `<em style='color: #999;'>No sub-question ${getSubQuestionLabel(deepNestedIndex)} yet...</em>` 
+                                }} />
+                                {deepNestedSub.image && (
+                                  <div className="preview-image-container">
+                                    <img 
+                                      src={deepNestedSub.image} 
+                                      alt={`Deep nested sub-question ${getSubQuestionLabel(deepNestedIndex)}`}
+                                      className="preview-image"
+                                    />
+                                  </div>
+                                )}
+                                {deepNestedSub.table && (
+                                  <div className="preview-table-container">
+                                    <table className="preview-table">
+                                      <tbody>
+                                        {deepNestedSub.table.data.map((row, rowIndex) => (
+                                          <tr key={rowIndex}>
+                                            {row.map((cell, colIndex) => (
+                                              <td key={colIndex}>{cell || '\u00A0'}</td>
+                                            ))}
+                                          </tr>
                                         ))}
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>

@@ -553,3 +553,67 @@
   background: #ccc;
   cursor: not-allowed;
 }
+
+/* Deep Nested Sub Question Styles (a, b, c under i, ii, iii) */
+.deep-nested-sub-question-button {
+  padding: 10px 20px;
+  background: #E91E63;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.deep-nested-sub-question-button:hover {
+  background: #C2185B;
+}
+
+.deep-nested-sub-question-wrapper {
+  margin-top: 15px;
+  margin-left: 30px;
+  padding-left: 15px;
+  border-left: 3px solid #E91E63;
+}
+
+.deep-nested-sub-question-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.deep-nested-sub-question-title {
+  font-size: 14px;
+  color: #E91E63;
+  margin: 0;
+  font-weight: bold;
+}
+
+.delete-deep-nested-button {
+  padding: 4px 12px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.delete-deep-nested-button:hover {
+  background: #ff5252;
+}
+
+/* Preview Deep Nested Sub Question Styles */
+.preview-deep-nested-sub-question {
+  margin-left: 40px;
+}
+
+.preview-deep-nested-sub-question .question-number {
+  min-width: 25px;
+}
+
+.deep-nested-sub-question-number {
+  color: #E91E63;
+}
