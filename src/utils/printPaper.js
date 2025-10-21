@@ -24,8 +24,6 @@ export const printPaper = async (questions) => {
       doc.rect(5, 5, pageWidth - 10, pageHeight - 10); // Draw rectangle border
     };
 
-
-
     // Draw border on first page
     drawPageBorder();
 
@@ -191,24 +189,49 @@ export const printPaper = async (questions) => {
           doc.setFontSize(12);
           doc.setFont("times", "bold");
           
-          // Show "1. a)" for first sub-question if main question is empty
-          const subLabel = subIdx === 0 && !hasMainQuestionText 
-            ? `${question.id}. ${getSubQuestionLabel(subIdx)}) `
-            : `${getSubQuestionLabel(subIdx)}) `;
+          
+          let subLabel, actualSubMargin;
+          const extraIndent = 6; // Additional spacing to move sub-questions right
+          
+          if (!hasMainQuestionText) {
+            // When no main question text
+            if (subIdx === 0) {
+              // First sub-question shows "2." at margin, then "a)" indented
+              const questionNumber = `${question.id}. `;
+              const questionNumberWidth = doc.getTextWidth(questionNumber);
+              
+              // Draw main question number at margin
+              doc.text(questionNumber, margin, currentY);
+              
+              // Draw sub-question label after the question number with extra indent
+              subLabel = `${getSubQuestionLabel(subIdx)}) `;
+              actualSubMargin = margin + questionNumberWidth + extraIndent;
+            } else {
+              // Other sub-questions show only "b)", "c)" aligned with first
+              const questionNumber = `${question.id}. `;
+              const questionNumberWidth = doc.getTextWidth(questionNumber);
+              
+              subLabel = `${getSubQuestionLabel(subIdx)}) `;
+              actualSubMargin = margin + questionNumberWidth + extraIndent;
+            }
+          } else {
+            // When main question text exists, indent all sub-questions
+            subLabel = `${getSubQuestionLabel(subIdx)}) `;
+            actualSubMargin = margin + 10;
+          }
           
           const subLabelWidth = doc.getTextWidth(subLabel);
-          const subMargin = hasMainQuestionText ? margin + 10 : margin;
           
-          doc.text(subLabel, subMargin, currentY);
+          doc.text(subLabel, actualSubMargin, currentY);
           
           doc.setFont("times", "normal");
           const subPlainText = htmlToPlainText(subQuestion.text);
           
           if (subPlainText) {
             // Calculate available width from the sub-question starting position
-            const availableWidth = (pageWidth - margin) - (subMargin + subLabelWidth);
+            const availableWidth = (pageWidth - margin) - (actualSubMargin + subLabelWidth);
             const subTextLines = doc.splitTextToSize(subPlainText, availableWidth);
-            doc.text(subTextLines, subMargin + subLabelWidth, currentY);
+            doc.text(subTextLines, actualSubMargin + subLabelWidth, currentY);
             currentY += (subTextLines.length * 6);
           } else {
             currentY += 6;
@@ -216,7 +239,7 @@ export const printPaper = async (questions) => {
 
           currentY += 2;
 
-          // Add sub-question image (40mm height)
+          // Add sub-question image (50mm height)
           if (subQuestion.image) {
             await addImage(subQuestion.image, 50);
           }
@@ -242,7 +265,16 @@ export const printPaper = async (questions) => {
               
               const nestedLabel = `${getRomanNumeral(nestedIdx)}) `;
               const nestedLabelWidth = doc.getTextWidth(nestedLabel);
-              const nestedMargin = margin + 20;
+              
+              // Calculate nested margin based on whether main question exists
+              let nestedMargin;
+              if (!hasMainQuestionText) {
+                const questionNumber = `${question.id}. `;
+                const questionNumberWidth = doc.getTextWidth(questionNumber);
+                nestedMargin = margin + questionNumberWidth + extraIndent + 10;
+              } else {
+                nestedMargin = margin + 20;
+              }
               
               doc.text(nestedLabel, nestedMargin, currentY);
               
