@@ -56,12 +56,12 @@ export const printPaper = async (questions) => {
 
 
 
-    // Helper function to convert HTML to plain text
-    const htmlToPlainText = (html) => {
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = html;
-      return tempDiv.textContent || tempDiv.innerText || "";
-    };
+    // // Helper function to convert HTML to plain text
+    // const htmlToPlainText = (html) => {
+    //   const tempDiv = document.createElement('div');
+    //   tempDiv.innerHTML = html;
+    //   return tempDiv.textContent || tempDiv.innerText || "";
+    // };
 
 
 
@@ -525,52 +525,27 @@ export const printPaper = async (questions) => {
               
               // Calculate nested margin based on whether main question exists and sub-question is empty
               let nestedMargin;
-              
+
+              // --- unified calculation: compute where the sub-label ends and use that for nested indent ---
+              const questionNumber = `${question.id}. `;
+              const questionNumberWidth = doc.getTextWidth(questionNumber);
+              const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
+              const subLabelTextWidth = doc.getTextWidth(subLabelText);
+
+              // where the sub-label was drawn (start X of sub-label)
+              const subLabelStart = hasMainQuestionText ? actualSubMargin : (margin + questionNumberWidth + extraIndent);
+
+              // nested labels should start after the sub-label end (+ small gap)
+              const nestedBase = subLabelStart + subLabelTextWidth + 3;
+
+              // If parent sub-question is empty and this is first nested, move up to same line (keeps previous behavior)
               if (isSubQuestionEmpty && nestedIdx === 0) {
-                // First nested sub-question when parent sub-question is empty
-                // Place it on the same line as the sub-question label
-                if (!hasMainQuestionText) {
-                  const questionNumber = `${question.id}. `;
-                  const questionNumberWidth = doc.getTextWidth(questionNumber);
-                  const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
-                  const subLabelTextWidth = doc.getTextWidth(subLabelText);
-                  
-                  // Move back up to the sub-question line
-                  currentY -= 8; // Move back up (6 from empty line + 2 from spacing)
-                  
-                  nestedMargin = margin + questionNumberWidth + extraIndent + subLabelTextWidth + 3;
-                } else {
-                  const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
-                  const subLabelTextWidth = doc.getTextWidth(subLabelText);
-                  
-                  // Move back up to the sub-question line
-                  currentY -= 8; // Move back up
-                  
-                  nestedMargin = actualSubMargin + subLabelTextWidth + 3;
-                }
-              } else if (isSubQuestionEmpty && nestedIdx > 0) {
-                // Subsequent nested sub-questions align with the first one
-                if (!hasMainQuestionText) {
-                  const questionNumber = `${question.id}. `;
-                  const questionNumberWidth = doc.getTextWidth(questionNumber);
-                  const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
-                  const subLabelTextWidth = doc.getTextWidth(subLabelText);
-                  nestedMargin = margin + questionNumberWidth + extraIndent + subLabelTextWidth + 3;
-                } else {
-                  const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
-                  const subLabelTextWidth = doc.getTextWidth(subLabelText);
-                  nestedMargin = actualSubMargin + subLabelTextWidth + 3;
-                }
+                currentY -= 8; // keep previous "same-line" behavior
+                nestedMargin = nestedBase;
               } else {
-                // Normal nested sub-question indentation
-                if (!hasMainQuestionText) {
-                  const questionNumber = `${question.id}. `;
-                  const questionNumberWidth = doc.getTextWidth(questionNumber);
-                  nestedMargin = margin + questionNumberWidth + extraIndent + 10;
-                } else {
-                  nestedMargin = margin + 20;
-                }
+                nestedMargin = nestedBase;
               }
+              // --- end unified calculation ---
               
               doc.text(nestedLabel, nestedMargin, currentY);
               
@@ -634,11 +609,11 @@ export const printPaper = async (questions) => {
                     // Move currentY up to nested label line (only once)
                     // nestedMargin and nestedLabelWidth exist in outer scope
                     currentY -= 8; // undo the empty-line advance done earlier
-                    deepNestedMargin = nestedMargin + nestedLabelWidth + 3 + deepExtraIndent;
+                    deepNestedMargin = nestedMargin + nestedLabelWidth - 3 + deepExtraIndent;
                     firstDeepPlacedOnSameLine = true;
                   } else if (isNestedSubQuestionEmpty && deepNestedIdx > 0 && firstDeepPlacedOnSameLine) {
                     // subsequent deep items align with the first deep item on that same line
-                    deepNestedMargin = nestedMargin + nestedLabelWidth + 3 + deepExtraIndent;
+                    deepNestedMargin = nestedMargin + nestedLabelWidth - 3 + deepExtraIndent;
                   } else {
                     // Normal deep nested indentation (indent relative to question number / sub-label)
                     if (!hasMainQuestionText) {
