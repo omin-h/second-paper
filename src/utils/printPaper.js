@@ -66,7 +66,7 @@ export const printPaper = async (questions) => {
 
 
     // NEW: Parse and render HTML with formatting
-    // Improved HTML -> formatted wrapped text renderer
+    // Improved HTML -> formatted wrapped text renderer (with small width slack)
     const renderFormattedText = (html, x, startY, maxWidth) => {
       const parser = new DOMParser();
       const htmlDoc = parser.parseFromString(html, 'text/html');
@@ -98,6 +98,7 @@ export const printPaper = async (questions) => {
       };
       body.childNodes.forEach(node => collect(node));
 
+      const SLACK = 0.5; // small tolerance (mm) to avoid wrapping on tiny differences
       const lineHeight = 6;
       const lines = [];
       let currentLine = [];
@@ -148,8 +149,8 @@ export const printPaper = async (questions) => {
         // measure whole token
         let tokenWidth = getWidth(token, tokenStyle);
 
-        // if token fits, append
-        if (currentLineWidth + tokenWidth <= maxWidth) {
+        // if token fits, append (allow small slack)
+        if (currentLineWidth + tokenWidth <= maxWidth + SLACK) {
           currentLine.push({ text: token, style: tokenStyle });
           currentLineWidth += tokenWidth;
           continue;
@@ -167,24 +168,23 @@ export const printPaper = async (questions) => {
           pushLine();
         }
 
-        // If token itself is longer than maxWidth, break it into chunks
-        if (tokenWidth > maxWidth) {
+        // If token itself is longer than maxWidth (account slack), break it into chunks
+        if (tokenWidth > maxWidth + SLACK) {
           let ptr = 0;
           while (ptr < token.length) {
             // build chunk that fits
             let chunk = '';
-            let chunkWidth = 0;
             // accumulate characters until exceed
             while (ptr < token.length) {
               const ch = token[ptr];
               const w = getWidth(chunk + ch, tokenStyle);
-              if (chunk === '' && w > maxWidth) {
+              if (chunk === '' && w > maxWidth + SLACK) {
                 // single char is wider than line (rare) -> still place it
                 chunk = ch;
                 ptr++;
                 break;
               }
-              if (w <= maxWidth) {
+              if (w <= maxWidth + SLACK) {
                 chunk += ch;
                 ptr++;
               } else break;
@@ -197,7 +197,7 @@ export const printPaper = async (questions) => {
           continue;
         }
 
-        // token shorter than maxWidth but didn't fit because line empty (should not happen)
+        // token shorter than maxWidth but didn't fit due to rounding — place it on new line
         currentLine.push({ text: token, style: tokenStyle });
         currentLineWidth += tokenWidth;
       }
