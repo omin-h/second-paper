@@ -17,11 +17,18 @@ export const printPaper = async (questions) => {
 
 
 
-    // Helper function to draw page border
+    // Helper function to draw page border with rounded corners
     const drawPageBorder = () => {
       doc.setDrawColor(0, 0, 0); // Black color
       doc.setLineWidth(0.1); // Border thickness
-      doc.rect(5, 5, pageWidth - 10, pageHeight - 10); // Draw rectangle border
+      
+      const borderMargin = 5;
+      const borderWidth = pageWidth - (2 * borderMargin);
+      const borderHeight = pageHeight - (2 * borderMargin);
+      const cornerRadius = 3; // Adjust this value for more/less curve
+      
+      // Draw rounded rectangle
+      doc.roundedRect(borderMargin, borderMargin, borderWidth, borderHeight, cornerRadius, cornerRadius);
     };
 
     // Draw border on first page
