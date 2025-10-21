@@ -8,11 +8,14 @@ export const printPaper = async (questions) => {
       orientation: "portrait"
     });
 
+
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 10;
     const contentWidth = pageWidth - (2 * margin);
-    let currentY = margin + 3; // Reduced from 5mm to 3mm
+    let currentY = margin + 3; 
+
+
 
     // Helper function to draw page border
     const drawPageBorder = () => {
@@ -21,17 +24,24 @@ export const printPaper = async (questions) => {
       doc.rect(5, 5, pageWidth - 10, pageHeight - 10); // Draw rectangle border
     };
 
+
+
     // Draw border on first page
     drawPageBorder();
+
 
     // Set default font
     doc.setFont("times", "normal");
     doc.setFontSize(12);
 
+
+
     // Helper function to get sub-question label
     const getSubQuestionLabel = (index) => {
-      return String.fromCharCode(97 + index); // a, b, c, d...
+      return String.fromCharCode(97 + index); 
     };
+
+
 
     // Helper function to get roman numeral
     const getRomanNumeral = (index) => {
@@ -39,12 +49,16 @@ export const printPaper = async (questions) => {
       return romanNumerals[index] || `(${index + 1})`;
     };
 
+
+
     // Helper function to convert HTML to plain text
     const htmlToPlainText = (html) => {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
       return tempDiv.textContent || tempDiv.innerText || "";
     };
+
+
 
     // Helper function to add image with variable height
     const addImage = async (imageData, imageHeight = 60) => {
@@ -64,16 +78,18 @@ export const printPaper = async (questions) => {
           const xPos = (pageWidth - imageWidth) / 2;
           
           doc.addImage(imageData, 'JPEG', xPos, currentY, imageWidth, imageHeight);
-          currentY += imageHeight + 5; // Reduced from 10mm to 3mm
+          currentY += imageHeight + 5; 
           resolve();
         };
         img.onerror = () => resolve();
       });
     };
 
+
+
     // Helper function to add table
     const addTable = (tableData, tableCols) => {
-      const tableWidth = contentWidth * 0.7; // Reduced to 70% of content width
+      const tableWidth = contentWidth * 0.7; 
       const colWidth = tableWidth / tableCols;
       const rowHeight = 8;
       const tableHeight = tableData.length * rowHeight;
@@ -106,8 +122,11 @@ export const printPaper = async (questions) => {
         });
       });
 
-      currentY += tableHeight + 5; // Reduced from 10mm to 5mm
+      currentY += tableHeight + 5; 
     };
+
+
+    
 
     // Process each main question
     for (let i = 0; i < questions.length; i++) {
@@ -137,10 +156,10 @@ export const printPaper = async (questions) => {
         if (plainText) {
           const textLines = doc.splitTextToSize(plainText, contentWidth - numberWidth - 5);
           doc.text(textLines, margin + numberWidth, currentY);
-          currentY += (textLines.length * 6); // Reduced from 7mm to 6mm
+          currentY += (textLines.length * 6); 
         }
 
-        currentY += 0; // Reduced from 5mm to 2mm
+        currentY += 0; 
 
         // Add main question image (60mm height)
         if (question.image) {
@@ -152,8 +171,10 @@ export const printPaper = async (questions) => {
           addTable(question.table.data, question.table.cols);
         }
 
-        currentY += 0; // Reduced from 5mm to 2mm
+        currentY += 0; 
       }
+
+
 
       // Process Sub-Questions
       if (question.subQuestions && question.subQuestions.length > 0) {
@@ -240,7 +261,7 @@ export const printPaper = async (questions) => {
 
               currentY += 1;
 
-              // Add nested sub-question image (20mm height)
+              // Add nested sub-question image (30mm height)
               if (nestedSub.image) {
                 await addImage(nestedSub.image, 30);
               }
@@ -259,8 +280,10 @@ export const printPaper = async (questions) => {
       }
 
       // Add spacing between main questions
-      currentY += 3; // Reduced from 10mm to 5mm
+      currentY += 3; 
     }
+
+
 
     // Save the PDF
     doc.save("question-paper.pdf");

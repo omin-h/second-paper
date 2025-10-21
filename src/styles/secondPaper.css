@@ -103,24 +103,29 @@
   background: #7B1FA2;
 }
 
-.image-preview-container {
-  width: 100%;
+/* Center all image containers */
+.image-preview-container,
+.preview-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-top: 15px;
-  padding: 15px;
+  padding: 10px;
   background: #f9f9f9;
   border: 2px dashed #ccc;
   border-radius: 4px;
   text-align: center;
 }
 
-.uploaded-image {
-  display: inline-block;
-  height: 200px;
-  width: auto;
+/* Center all images and set max width/height */
+.uploaded-image,
+.preview-image {
+  display: block;
+  margin: 0 auto;
   max-width: 100%;
-  border-radius: 4px;
-  margin-bottom: 10px;
+  height: 120px; /* or your preferred height */
   object-fit: contain;
+  border-radius: 4px;
 }
 
 .remove-image-button {

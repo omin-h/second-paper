@@ -28,9 +28,14 @@ export default function SecondPaper() {
     }]);
   };
 
+
+  
   const updateQuestion = (id, text) => {
     setQuestions(questions.map(q => q.id === id ? { ...q, text } : q));
   };
+
+
+
 
   const deleteQuestion = (id) => {
     setQuestions(questions.filter(q => q.id !== id).map((q, index) => ({ 
@@ -38,6 +43,9 @@ export default function SecondPaper() {
       id: index + 1 
     })));
   };
+
+
+
 
   const handleImageUpload = (id, event, subIndex = null, nestedIndex = null) => {
     const file = event.target.files[0];
@@ -70,6 +78,9 @@ export default function SecondPaper() {
     }
   };
 
+
+
+
   const removeImage = (id, subIndex = null, nestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === id) {
@@ -91,11 +102,17 @@ export default function SecondPaper() {
     }));
   };
 
+
+
+
   const openTableModal = (id, subIndex = null, nestedIndex = null) => {
     setShowTableModal({ questionId: id, subIndex, nestedIndex });
     setTableRows(3);
     setTableCols(3);
   };
+
+
+
 
   const createTable = () => {
     const { questionId, subIndex, nestedIndex } = showTableModal;
@@ -105,6 +122,9 @@ export default function SecondPaper() {
       data: Array(tableRows).fill(null).map(() => Array(tableCols).fill(''))
     };
     
+
+
+
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
         if (subIndex !== null && nestedIndex !== null) {
@@ -125,6 +145,9 @@ export default function SecondPaper() {
     }));
     setShowTableModal(null);
   };
+
+
+
 
   const updateTableCell = (questionId, rowIndex, colIndex, value, subIndex = null, nestedIndex = null) => {
     setQuestions(questions.map(q => {
@@ -168,6 +191,9 @@ export default function SecondPaper() {
     }));
   };
 
+
+
+
   const removeTable = (id, subIndex = null, nestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === id) {
@@ -188,6 +214,9 @@ export default function SecondPaper() {
       return q;
     }));
   };
+
+
+
 
   const addSubQuestion = (questionId, subIndex = null) => {
     setQuestions(questions.map(q => {
@@ -218,6 +247,9 @@ export default function SecondPaper() {
     }));
   };
 
+
+
+
   const updateSubQuestion = (questionId, subIndex, text, nestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
@@ -235,6 +267,9 @@ export default function SecondPaper() {
     }));
   };
 
+
+
+
   const deleteSubQuestion = (questionId, subIndex, nestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
@@ -250,14 +285,23 @@ export default function SecondPaper() {
     }));
   };
 
+
+
+
   const getSubQuestionLabel = (index) => {
     return String.fromCharCode(97 + index); // a, b, c, d...
   };
+
+
+
 
   const getRomanNumeral = (index) => {
     const romanNumerals = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
     return romanNumerals[index] || `(${index + 1})`;
   };
+
+
+
 
   const handlePrint = async () => {
     setIsPrinting(true);
@@ -269,6 +313,9 @@ export default function SecondPaper() {
     }
   };
 
+
+
+
   const renderQuestionBlock = (question, questionId, level = 'main', subIndex = null, nestedIndex = null) => {
     let label;
     if (level === 'nested') {
@@ -279,6 +326,11 @@ export default function SecondPaper() {
       label = question.id;
     }
     
+
+
+
+
+
     return (
       <div className={level !== 'main' ? "sub-question-container" : ""}>
         <RichTextEditor
