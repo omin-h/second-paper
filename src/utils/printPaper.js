@@ -475,7 +475,7 @@ export const printPaper = async (questions) => {
           
           doc.text(subLabel, actualSubMargin, currentY);
           
-          doc.setFont("times", "normal");
+          doc.setFont("times", "normal"); 
           
           if (subQuestion.text && subQuestion.text.trim()) {
             // Calculate available width from the sub-question starting position
