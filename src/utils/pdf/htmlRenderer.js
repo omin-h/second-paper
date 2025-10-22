@@ -106,13 +106,15 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
   let currentLineWidth = 0;
   let pendingIndent = 0;
   let activeIndent = 0;
+  let isCurrentListItem = false; // Add this flag
 
-  const pushLine = () => {
-    lines.push({ segments: currentLine, indent: activeIndent });
+  const pushLine = (isListItem = false) => {
+    lines.push({ segments: currentLine, indent: activeIndent, isListItem });
     currentLine = [];
     currentLineWidth = 0;
     activeIndent = 0;
     pendingIndent = 0;
+    isCurrentListItem = false;
   };
 
   const appendToken = (tokenText, tokenStyle) => {
@@ -133,12 +135,12 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
     }
 
     if (/^\s+$/.test(tokenText)) {
-      pushLine();
+      pushLine(isCurrentListItem);
       return;
     }
 
     if (currentLine.length > 0) {
-      pushLine();
+      pushLine(isCurrentListItem);
     }
 
     if (w > effectiveMax + SLACK) {
@@ -159,7 +161,7 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
         }
         currentLine.push({ text: chunk, style: tokenStyle });
         currentLineWidth = getWidth(chunk, tokenStyle);
-        pushLine();
+        pushLine(isCurrentListItem);
       }
       return;
     }
@@ -171,18 +173,20 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
   for (let i = 0; i < tokens.length; i++) {
     const tk = tokens[i];
     if (tk.type === 'newline') {
-      pushLine();
+      pushLine(isCurrentListItem);
       continue;
     }
     if (tk.type === 'liStart') {
       pushLine();
       pendingIndent = 6 * (tk.level + 1);
       const bullet = tk.listType === 'ul' ? '• ' : `${tk.index}. `;
+      isCurrentListItem = true; // Set flag for list item
       appendToken(bullet, { bold: false, italic: false, underline: false });
       continue;
     }
     if (tk.type === 'liEnd') {
-      pushLine();
+      pushLine(isCurrentListItem);
+      isCurrentListItem = false;
       continue;
     }
     if (tk.type === 'text') {
@@ -190,7 +194,7 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
     }
   }
 
-  if (currentLine.length > 0) pushLine();
+  if (currentLine.length > 0) pushLine(isCurrentListItem);
 
   let y = startY;
   for (let li = 0; li < lines.length; li++) {
@@ -207,7 +211,8 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
       }
       xPos += doc.getTextWidth(seg.text);
     }
-    y += lineHeight;
+    // Use a smaller line height for list items
+    y += line.isListItem ? 1 : lineHeight;
   }
 
   doc.setFont("times", "normal");
