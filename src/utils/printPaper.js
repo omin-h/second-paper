@@ -13,7 +13,7 @@ export const printPaper = async (questions) => {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 10;
     const contentWidth = pageWidth - (2 * margin);
-    let currentY = margin + 3; 
+    let currentY = margin + 4; 
 
 
 
@@ -154,10 +154,12 @@ export const printPaper = async (questions) => {
 
 
 
-      // rendering / line-wrapping logic with support for per-line indent (for lists)
+      //List rendering / line-wrapping logic with support for per-line indent
       const SLACK = 0.5;
       const lineHeight = 6;
 
+
+      //Font Style Management
       const setFontForStyle = (s) => {
         if (s.bold && s.italic) doc.setFont("times", "bolditalic");
         else if (s.bold) doc.setFont("times", "bold");
@@ -165,6 +167,7 @@ export const printPaper = async (questions) => {
         else doc.setFont("times", "normal");
       };
 
+      //text width
       const getWidth = (text, style) => {
         const prev = doc.getFont();
         setFontForStyle(style || { });
@@ -173,12 +176,15 @@ export const printPaper = async (questions) => {
         return w;
       };
 
+      //list sizes
       const lines = [];
       let currentLine = [];
       let currentLineWidth = 0;
       // indent applied at line start (mm)
       let pendingIndent = 0; // set when a liStart encountered; applied to first token on new line
       let activeIndent = 0; // current line's indent
+
+
       const pushLine = () => {
         lines.push({ segments: currentLine, indent: activeIndent });
         currentLine = [];
@@ -378,7 +384,7 @@ export const printPaper = async (questions) => {
       const question = questions[i];
       
       // Check if we need a new page
-      if (currentY > pageHeight - 40 && i > 0) {
+      if (currentY > pageHeight - 30 && i > 0) {
         doc.addPage();
         drawPageBorder(); // Draw border on new page
         currentY = margin;
