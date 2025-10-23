@@ -15,7 +15,7 @@ export const createQuestionRenderer = (
     if (currentY > pageHeight - 40) {
       doc.addPage();
       drawPageBorder();
-      currentY = margin;
+      currentY = margin + 5;
     }
 
     const hasMainQuestionText = question.text && question.text.trim() !== '';
@@ -55,7 +55,7 @@ export const createQuestionRenderer = (
     if (currentY > pageHeight - 40) {
       doc.addPage();
       drawPageBorder();
-      currentY = margin;
+      currentY = margin + 5;
     }
 
     doc.setFontSize(12);
@@ -129,7 +129,7 @@ export const createQuestionRenderer = (
     if (currentY > pageHeight - 40) {
       doc.addPage();
       drawPageBorder();
-      currentY = margin;
+      currentY = margin + 5;
     }
 
     doc.setFontSize(12);

@@ -56,7 +56,7 @@ export const printPaper = async (questions) => {
       if (currentY > pageHeight - 40 && i > 0) {
         doc.addPage();
         drawBorder();
-        currentY = margin;
+        currentY = margin + 5;
       }
 
       const mainResult = await questionRenderer.renderMainQuestion(question, currentY);

@@ -3,7 +3,7 @@ export const PDF_CONFIG = {
   format: "a4",
   orientation: "portrait",
   margin: 10,
-  borderMargin: 5,
+  borderMargin: 7,
   cornerRadius: 3,
   lineHeight: 6,
   slack: 0.5,

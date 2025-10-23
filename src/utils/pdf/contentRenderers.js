@@ -6,7 +6,7 @@ export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, con
     if (currentY + imageHeight > pageHeight - margin) {
       doc.addPage();
       drawPageBorder();
-      currentY = margin + (config.spacing.beforeImage || 0);
+      currentY = margin + 5 + (config.spacing.beforeImage || 0);
     }
 
     const img = new Image();
@@ -39,7 +39,7 @@ export const createTableRenderer = (doc, pageHeight, margin, contentWidth, drawP
     if (currentY + tableHeight > pageHeight - margin) {
       doc.addPage();
       drawPageBorder();
-      currentY = margin;
+      currentY = margin + 5;
     }
 
     doc.setFont("times", "normal");
