@@ -1,9 +1,12 @@
-export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder) => {
+export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, config) => {
   return async (imageData, imageHeight, currentY) => {
+    // Add configurable space before the image
+    currentY += config.spacing.beforeImage || 0;
+
     if (currentY + imageHeight > pageHeight - margin) {
       doc.addPage();
       drawPageBorder();
-      currentY = margin;
+      currentY = margin + (config.spacing.beforeImage || 0);
     }
 
     const img = new Image();

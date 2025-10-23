@@ -137,34 +137,18 @@ export const createQuestionRenderer = (
     
     const nestedLabel = `${getRomanNumeral(nestedIdx)}) `;
     const nestedLabelWidth = doc.getTextWidth(nestedLabel);
-    const isSubQuestionEmpty = !subQuestion.text || subQuestion.text.trim() === '';
-    
-    const questionNumber = `${questionId}. `;
-    const questionNumberWidth = doc.getTextWidth(questionNumber);
-    const subLabelText = `${getSubQuestionLabel(subIdx)}) `;
-    const subLabelTextWidth = doc.getTextWidth(subLabelText);
-    const extraIndent = config.spacing.extraIndent;
+    // Choose a fixed column for the right edge of the label
+    const nestedLabelCol = actualSubMargin + 15; 
 
-    const subLabelStart = hasMainQuestionText ? actualSubMargin : (margin + questionNumberWidth + extraIndent);
-    const nestedBase = subLabelStart + subLabelTextWidth + 3;
-
-    let nestedMargin;
-    if (isSubQuestionEmpty && nestedIdx === 0) {
-      currentY -= 8;
-      nestedMargin = nestedBase;
-    } else {
-      nestedMargin = nestedBase;
-    }
-    
-    doc.text(nestedLabel, nestedMargin, currentY);
+    doc.text(nestedLabel, nestedLabelCol - nestedLabelWidth, currentY);
     doc.setFont("times", "normal");
-    
+
     if (nestedSub.text && nestedSub.text.trim()) {
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const availableWidth = (pageWidth - margin) - (nestedMargin + nestedLabelWidth);
+      const textStartX = nestedLabelCol; // 1 unit gap after label (sub question)
+      const availableWidth = (doc.internal.pageSize.getWidth() - margin) - textStartX;
       const textHeight = renderFormattedText(
         nestedSub.text,
-        nestedMargin + nestedLabelWidth,
+        textStartX,
         currentY,
         availableWidth
       );
@@ -185,7 +169,7 @@ export const createQuestionRenderer = (
       currentY += config.spacing.afterTable;
     }
 
-    return { currentY, nestedMargin, nestedLabelWidth };
+    return { currentY, nestedMargin: nestedLabelCol, nestedLabelWidth };
   };
 
   const renderDeepNestedSubQuestion = async (
@@ -224,10 +208,10 @@ export const createQuestionRenderer = (
 
     if (isNestedSubQuestionEmpty && deepNestedIdx === 0) {
       currentY -= 8;
-      deepNestedMargin = nestedMargin + nestedLabelWidth - 3 + deepExtraIndent;
+      deepNestedMargin = nestedMargin + nestedLabelWidth - 9.5 + deepExtraIndent;
       newFirstDeepPlaced = true;
     } else if (isNestedSubQuestionEmpty && deepNestedIdx > 0 && firstDeepPlacedOnSameLine) {
-      deepNestedMargin = nestedMargin + nestedLabelWidth - 3 + deepExtraIndent;
+      deepNestedMargin = nestedMargin + nestedLabelWidth - 9.5 + deepExtraIndent;
     } else {
       if (!hasMainQuestionText) {
         const questionNumber = `${questionId}. `;

@@ -16,6 +16,7 @@ export const PDF_CONFIG = {
   },
   spacing: {
     afterImage: 5,
+    beforeImage: -5,
     afterTable: 5,
     betweenQuestions: 3,
     betweenSubQuestions: 2,
