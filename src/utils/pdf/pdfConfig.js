@@ -22,7 +22,7 @@ export const PDF_CONFIG = {
     betweenQuestions: 3,
     betweenSubQuestions: 2,
     betweenNestedSubQuestions: 1,
-    extraIndent: 3,
+    extraIndent: 2,
     deepExtraIndent: 8,
     emptyQuestionLineHeight: 6,
     pageBreakBuffer: 10,
@@ -36,7 +36,7 @@ export const PDF_CONFIG = {
   },
   questionNumbering: {
     mainQuestionLeftMargin: 10,
-    subQuestionLeftIndent: 7,
+    subQuestionLeftIndent: 6,
     nestedLabelColumnOffset: 15,
     deepNestedEmptyParentOffset: -9.5,
     deepNestedNormalIndent: 20,
