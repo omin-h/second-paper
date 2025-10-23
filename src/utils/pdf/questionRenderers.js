@@ -12,15 +12,20 @@ export const createQuestionRenderer = (
   config
 ) => {
   const renderMainQuestion = async (question, currentY) => {
-    if (currentY > pageHeight - 40) {
-      doc.addPage();
-      drawPageBorder();
-      currentY = margin + 5;
-    }
-
     const hasMainQuestionText = question.text && question.text.trim() !== '';
 
     if (hasMainQuestionText) {
+      // Estimate text height (rough calculation)
+      const estimatedLines = Math.ceil(question.text.length / 100); 
+      const estimatedHeight = estimatedLines * 6; 
+
+      // Check if question + estimated text will fit
+      if (currentY + estimatedHeight > pageHeight - margin - 10) {
+        doc.addPage();
+        drawPageBorder();
+        currentY = margin + 5;
+      }
+
       doc.setFontSize(12);
       doc.setFont("times", "bold");
       const questionNumber = `${question.id}. `;
@@ -36,26 +41,55 @@ export const createQuestionRenderer = (
         contentWidth - numberWidth - 5
       );
       currentY += textHeight;
-
-      if (question.image) {
-        currentY = await addImage(question.image, config.images.main, currentY);
-        currentY += config.spacing.afterImage;
+    } else {
+      // Even if no text, check if we're near bottom
+      if (currentY > pageHeight - 40) {
+        doc.addPage();
+        drawPageBorder();
+        currentY = margin + 5;
       }
+    }
 
-      if (question.table) {
-        currentY = addTable(question.table.data, question.table.cols, currentY);
-        currentY += config.spacing.afterTable;
+    // Always render image and table, even if text is empty
+    if (question.image) {
+      // Check if image will fit on current page
+      if (currentY + config.images.main > pageHeight - margin) {
+        doc.addPage();
+        drawPageBorder();
+        currentY = margin + 5;
       }
+      currentY = await addImage(question.image, config.images.main, currentY);
+      currentY += config.spacing.afterImage;
+    }
+
+    if (question.table) {
+      currentY = addTable(question.table.data, question.table.cols, currentY);
+      currentY += config.spacing.afterTable;
     }
 
     return { currentY, hasMainQuestionText };
   };
 
   const renderSubQuestion = async (subQuestion, subIdx, questionId, hasMainQuestionText, currentY) => {
-    if (currentY > pageHeight - 40) {
-      doc.addPage();
-      drawPageBorder();
-      currentY = margin + 5;
+    const hasSubQuestionText = subQuestion.text && subQuestion.text.trim() !== '';
+
+    if (hasSubQuestionText) {
+      // Estimate text height before rendering
+      const estimatedLines = Math.ceil(subQuestion.text.length / 100);
+      const estimatedHeight = estimatedLines * 6;
+
+      // Check if sub-question + estimated text will fit
+      if (currentY + estimatedHeight > pageHeight - margin - 10) {
+        doc.addPage();
+        drawPageBorder();
+        currentY = margin + 5;
+      }
+    } else {
+      if (currentY > pageHeight - 40) {
+        doc.addPage();
+        drawPageBorder();
+        currentY = margin + 5;
+      }
     }
 
     doc.setFontSize(12);
@@ -126,10 +160,25 @@ export const createQuestionRenderer = (
     subLabelWidth,
     currentY
   ) => {
-    if (currentY > pageHeight - 40) {
-      doc.addPage();
-      drawPageBorder();
-      currentY = margin + 5;
+    const hasNestedSubQuestionText = nestedSub.text && nestedSub.text.trim() !== '';
+
+    if (hasNestedSubQuestionText) {
+      // Estimate text height before rendering
+      const estimatedLines = Math.ceil(nestedSub.text.length / 100);
+      const estimatedHeight = estimatedLines * 6;
+
+      // Check if nested sub-question + estimated text will fit
+      if (currentY + estimatedHeight > pageHeight - margin - 10) {
+        doc.addPage();
+        drawPageBorder();
+        currentY = margin + 5;
+      }
+    } else {
+      if (currentY > pageHeight - 40) {
+        doc.addPage();
+        drawPageBorder();
+        currentY = margin + 5;
+      }
     }
 
     doc.setFontSize(12);
@@ -183,15 +232,35 @@ export const createQuestionRenderer = (
     firstDeepPlacedOnSameLine,
     currentY
   ) => {
-    if (currentY > pageHeight - 40) {
-      doc.addPage();
-      drawPageBorder();
-      currentY = margin + 3;
+    const hasDeepNestedSubQuestionText = deepNestedSub.text && deepNestedSub.text.trim() !== '';
+
+    if (hasDeepNestedSubQuestionText) {
+      // Estimate text height before rendering
+      const estimatedLines = Math.ceil(deepNestedSub.text.length / 100);
+      const estimatedHeight = estimatedLines * 6;
+
+      // Check if deep nested sub-question + estimated text will fit
+      if (currentY + estimatedHeight > pageHeight - margin - 10) {
+        doc.addPage();
+        drawPageBorder();
+        currentY = margin + 3;
+      } else {
+        // Only add space if parent sub-question is empty
+        const isNestedSubQuestionEmpty = !nestedSub.text || nestedSub.text.trim() === '';
+        if (isNestedSubQuestionEmpty) {
+          currentY += 1; 
+        }
+      }
     } else {
-      // Only add space if parent sub-question is empty
-      const isNestedSubQuestionEmpty = !nestedSub.text || nestedSub.text.trim() === '';
-      if (isNestedSubQuestionEmpty) {
-        currentY += 1; 
+      if (currentY > pageHeight - 40) {
+        doc.addPage();
+        drawPageBorder();
+        currentY = margin + 3;
+      } else {
+        const isNestedSubQuestionEmpty = !nestedSub.text || nestedSub.text.trim() === '';
+        if (isNestedSubQuestionEmpty) {
+          currentY += 1; 
+        }
       }
     }
 
