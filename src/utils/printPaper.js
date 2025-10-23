@@ -33,7 +33,7 @@ export const printPaper = async (questions) => {
     doc.setFontSize(PDF_CONFIG.font.size.default);
 
     const addImage = createImageRenderer(doc, pageHeight, margin, drawBorder, PDF_CONFIG);
-    const addTable = createTableRenderer(doc, pageHeight, margin, contentWidth, drawBorder);
+    const addTable = createTableRenderer(doc, pageHeight, margin, contentWidth, drawBorder, PDF_CONFIG);
 
     const boundRenderFormattedText = (html, x, startY, maxWidth) => 
       renderFormattedText(doc, html, x, startY, maxWidth);

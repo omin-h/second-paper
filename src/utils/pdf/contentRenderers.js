@@ -6,7 +6,7 @@ export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, con
     if (currentY + imageHeight > pageHeight - margin) {
       doc.addPage();
       drawPageBorder();
-      currentY = margin + 5 + (config.spacing.beforeImage || 0);
+      currentY = margin + config.spacing.topPageMargin + (config.spacing.beforeImage || 0);
     }
 
     const img = new Image();
@@ -29,21 +29,24 @@ export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, con
   };
 };
 
-export const createTableRenderer = (doc, pageHeight, margin, contentWidth, drawPageBorder) => {
+export const createTableRenderer = (doc, pageHeight, margin, contentWidth, drawPageBorder, config) => {
   return (tableData, tableCols, currentY) => {
-    const tableWidth = contentWidth * 0.7;
+    // Add configurable space before the table
+    currentY += config.spacing.beforeTable || 0;
+
+    const tableWidth = contentWidth * (config.table.widthPercentage || 0.7);
     const colWidth = tableWidth / tableCols;
-    const rowHeight = 8;
+    const rowHeight = config.table.rowHeight || 8;
     const tableHeight = tableData.length * rowHeight;
 
     if (currentY + tableHeight > pageHeight - margin) {
       doc.addPage();
       drawPageBorder();
-      currentY = margin + 5;
+      currentY = margin + config.spacing.topPageMargin + (config.spacing.beforeTable || 0);
     }
 
-    doc.setFont("times", "normal");
-    doc.setFontSize(10);
+    doc.setFont(config.font.family, "normal");
+    doc.setFontSize(config.font.size.table);
     
     const tableStartX = margin + (contentWidth - tableWidth) / 2;
     
