@@ -22,6 +22,7 @@ export const createNestedSubQuestionRenderer = (
     currentY
   ) => {
     const hasNestedSubQuestionText = nestedSub.text && nestedSub.text.trim() !== '';
+    const isSubQuestionEmpty = !subQuestion.text || subQuestion.text.trim() === '';
 
     if (hasNestedSubQuestionText) {
       // Estimate text height before rendering
@@ -47,8 +48,21 @@ export const createNestedSubQuestionRenderer = (
     
     const nestedLabel = `${getRomanNumeral(nestedIdx)}) `;
     const nestedLabelWidth = doc.getTextWidth(nestedLabel);
-    // Choose a fixed column for the right edge of the label
-    const nestedLabelCol = actualSubMargin + config.questionNumbering.nestedLabelColumnOffset; 
+    
+    let nestedLabelCol;
+    
+    // If sub-question is empty and this is the first nested sub-question
+    if (isSubQuestionEmpty && nestedIdx === 0) {
+      // Place it on the same line, right after the sub-question label
+      currentY -= config.spacing.emptyQuestionLineHeight + 2; // Remove the extra space added by empty sub-question
+      nestedLabelCol = actualSubMargin + subLabelWidth + 10; // Small gap after sub-question label
+    } else if (isSubQuestionEmpty && nestedIdx > 0) {
+      // Continue on the normal flow for subsequent nested questions
+      nestedLabelCol = actualSubMargin + config.questionNumbering.nestedLabelColumnOffset;
+    } else {
+      // Normal case: sub-question has text
+      nestedLabelCol = actualSubMargin + config.questionNumbering.nestedLabelColumnOffset;
+    }
 
     doc.text(nestedLabel, nestedLabelCol - nestedLabelWidth, currentY);
     doc.setFont(config.font.family, "normal");
