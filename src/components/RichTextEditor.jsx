@@ -63,38 +63,7 @@ export default function RichTextEditor({ value, onChange, placeholder = "Type he
           title="Strikethrough"
         >
           <s>S</s>
-        </button>
-        
-        <div style={{ width: "1px", background: "#ccc", margin: "0 5px" }}></div>
-        
-        <button
-          onClick={() => applyFormat('formatBlock', '<h1>')}
-          style={toolbarButtonStyle}
-          title="Heading 1"
-        >
-          H1
-        </button>
-        <button
-          onClick={() => applyFormat('formatBlock', '<h2>')}
-          style={toolbarButtonStyle}
-          title="Heading 2"
-        >
-          H2
-        </button>
-        <button
-          onClick={() => applyFormat('formatBlock', '<h3>')}
-          style={toolbarButtonStyle}
-          title="Heading 3"
-        >
-          H3
-        </button>
-        <button
-          onClick={() => applyFormat('formatBlock', '<p>')}
-          style={toolbarButtonStyle}
-          title="Paragraph"
-        >
-          P
-        </button>
+        </button>        
         
         <div style={{ width: "1px", background: "#ccc", margin: "0 5px" }}></div>
         

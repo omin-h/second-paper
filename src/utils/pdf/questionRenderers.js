@@ -202,7 +202,13 @@ export const createQuestionRenderer = (
     if (currentY > pageHeight - 40) {
       doc.addPage();
       drawPageBorder();
-      currentY = margin;
+      currentY = margin + 3;
+    } else {
+      // Only add space if parent sub-question is empty
+      const isNestedSubQuestionEmpty = !nestedSub.text || nestedSub.text.trim() === '';
+      if (isNestedSubQuestionEmpty) {
+        currentY += 1; 
+      }
     }
 
     doc.setFontSize(12);

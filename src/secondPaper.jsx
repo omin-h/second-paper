@@ -411,7 +411,7 @@ export default function SecondPaper() {
               onClick={() => addSubQuestion(questionId, subIndex)}
               className="nested-sub-question-button"
             >
-              ➕ Add Nested Sub Question
+              ➕ Add Sub Question
             </button>
           )}
 
