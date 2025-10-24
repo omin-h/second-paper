@@ -211,8 +211,8 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
       }
       xPos += doc.getTextWidth(seg.text);
     }
-    // Use a smaller line height for list items
-    y += line.isListItem ? 1 : lineHeight;
+    // Use consistent line spacing for wrapped list items to avoid overlap
+    y += lineHeight;
   }
 
   doc.setFont("times", "normal");
