@@ -11,7 +11,7 @@ export const PDF_CONFIG = {
     family: "times",
     size: {
       default: 12,
-      table: 10
+      table: 8
     }
   },
   spacing: {
@@ -49,7 +49,7 @@ export const PDF_CONFIG = {
     nested: 30
   },
   table: {
-    widthPercentage: 0.7,
+    widthPercentage: 0.85,
     rowHeight: 8
   }
 };
