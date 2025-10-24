@@ -11,7 +11,7 @@ export const PDF_CONFIG = {
     family: "times",
     size: {
       default: 12,
-      table: 8
+      table: 10
     }
   },
   spacing: {
