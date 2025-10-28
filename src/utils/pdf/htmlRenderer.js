@@ -1,3 +1,5 @@
+import { createListMarker, calculateListIndent, processListStart, processListEnd } from './listHelpers.js';
+
 export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
   const parser = new DOMParser();
   const htmlDoc = parser.parseFromString(html, 'text/html');
@@ -15,18 +17,38 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
       if (k === 'font-weight' && (v === 'bold' || +v >= 700)) s.bold = true;
       if (k === 'font-style' && v === 'italic') s.italic = true;
       if (k === 'text-decoration' && v.includes('underline')) s.underline = true;
+      if (k === 'white-space' && (v === 'pre' || v === 'pre-wrap')) s.preserveWhitespace = true;
     }
     return s;
   };
 
-  const collect = (node, style = { bold: false, italic: false, underline: false }, listStack = []) => {
+  const collect = (node, style = { bold: false, italic: false, underline: false, preserveWhitespace: false }, listStack = []) => {
     if (!node) return;
 
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent;
       if (!text) return;
-      const toks = text.match(/\S+|\s+/g) || [];
-      toks.forEach(t => tokens.push({ type: 'text', text: t, style: { ...style } }));
+      
+      // Replace non-breaking spaces with regular spaces for consistent rendering
+      const normalizedText = text.replace(/\u00A0/g, ' ');
+      
+      if (style.preserveWhitespace || style.monospace) {
+        // For preformatted text, preserve all whitespace including multiple spaces and newlines
+        const lines = normalizedText.split('\n');
+        lines.forEach((line, idx) => {
+          if (line || idx === 0) {
+            // Don't split into tokens - keep the whole line to preserve spaces
+            tokens.push({ type: 'text', text: line, style: { ...style } });
+          }
+          if (idx < lines.length - 1) {
+            tokens.push({ type: 'newline' });
+          }
+        });
+      } else {
+        // Normal text - split into words and spaces for wrapping
+        const toks = normalizedText.match(/\S+|\s+/g) || [];
+        toks.forEach(t => tokens.push({ type: 'text', text: t, style: { ...style } }));
+      }
       return;
     }
 
@@ -47,9 +69,40 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
         return;
       }
 
+      if (tag === 'pre' || tag === 'code') {
+        // Preserve whitespace exactly for code/pre blocks
+        const text = node.textContent;
+        if (text) {
+          // Split by lines to preserve newlines
+          const lines = text.split('\n');
+          lines.forEach((line, idx) => {
+            if (line) {
+              // Preserve all spaces by not splitting into tokens
+              tokens.push({ type: 'text', text: line, style: { ...newStyle, monospace: true } });
+            }
+            if (idx < lines.length - 1) {
+              tokens.push({ type: 'newline' });
+            }
+          });
+        }
+        return;
+      }
+
       if (tag === 'p') {
+        // Add content of paragraph
         node.childNodes.forEach(child => collect(child, newStyle, listStack));
+        // Add newline to end the paragraph - browsers add spacing between paragraphs
+        // We add just one newline, as the next paragraph will start on a new line
         tokens.push({ type: 'newline' });
+        return;
+      }
+
+      if (tag === 'div') {
+        // Divs are often used by contentEditable for line breaks
+        const st = node.getAttribute('style');
+        const styleWithWhitespace = parseInlineStyle(st, newStyle);
+        node.childNodes.forEach(child => collect(child, styleWithWhitespace, listStack));
+        // Add newline after div content
         tokens.push({ type: 'newline' });
         return;
       }
@@ -118,8 +171,10 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
   };
 
   const appendToken = (tokenText, tokenStyle) => {
-    if (/^\s+$/.test(tokenText) && currentLine.length === 0) return;
-
+    // Don't skip leading whitespace - it might be intentional indentation
+    // Only skip if it's trailing whitespace after a line break
+    const isOnlyWhitespace = /^\s+$/.test(tokenText);
+    
     if (currentLine.length === 0 && pendingIndent) {
       activeIndent = pendingIndent;
       pendingIndent = 0;
@@ -177,16 +232,14 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
       continue;
     }
     if (tk.type === 'liStart') {
-      pushLine();
-      pendingIndent = 6 * (tk.level + 1);
-      const bullet = tk.listType === 'ul' ? '• ' : `${tk.index}. `;
-      isCurrentListItem = true; // Set flag for list item
-      appendToken(bullet, { bold: false, italic: false, underline: false });
+      const listState = processListStart(tk, pushLine, appendToken);
+      pendingIndent = listState.pendingIndent;
+      isCurrentListItem = listState.isCurrentListItem;
       continue;
     }
     if (tk.type === 'liEnd') {
-      pushLine(isCurrentListItem);
-      isCurrentListItem = false;
+      const listState = processListEnd(pushLine, isCurrentListItem);
+      isCurrentListItem = listState.isCurrentListItem;
       continue;
     }
     if (tk.type === 'text') {

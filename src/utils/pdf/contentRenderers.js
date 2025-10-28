@@ -1,6 +1,5 @@
 export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, config) => {
   return async (imageData, imageHeight, currentY) => {
-    // Add configurable space before the image
     currentY += config.spacing.beforeImage || 0;
 
     if (currentY + imageHeight > pageHeight - margin) {
@@ -31,7 +30,6 @@ export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, con
 
 export const createTableRenderer = (doc, pageHeight, margin, contentWidth, drawPageBorder, config) => {
   return (tableData, tableCols, currentY) => {
-    // Add configurable space before the table
     currentY += config.spacing.beforeTable || 0;
 
     const tableWidth = contentWidth * (config.table.widthPercentage || 0.7);

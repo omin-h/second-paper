@@ -37,7 +37,7 @@ export const PDF_CONFIG = {
   questionNumbering: {
     mainQuestionLeftMargin: 10,
     subQuestionLeftIndent: 6,
-    nestedLabelColumnOffset: 15,
+    nestedLabelColumnOffset: 10,
     deepNestedEmptyParentOffset: -9.5,
     deepNestedNormalIndent: 20,
     deepNestedEmptyParentVerticalAdjustment: -8,

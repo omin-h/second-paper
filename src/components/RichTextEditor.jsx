@@ -121,7 +121,9 @@ export default function RichTextEditor({ value, onChange, placeholder = "Type he
           backgroundColor: "white",
           outline: "none",
           fontSize: "16px",
-          lineHeight: "1.6"
+          lineHeight: "1.6",
+          whiteSpace: "pre-wrap",  // Preserve whitespace and line breaks
+          wordWrap: "break-word"    // Allow long words to wrap
         }}
         data-placeholder={placeholder}
       />
