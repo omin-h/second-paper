@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { LatexPreview, parseLatexFromText } from './latexRenderer';
-import { printTextToPDF } from './fractionJs';
+import { printMixedContentToPDF } from './fractionJs';
 
 const style = {
   container: { padding: '20px', fontFamily: 'sans-serif' },
@@ -39,14 +39,15 @@ const FractionCanvas = () => {
           inputText.slice(end);
         setInputText(newText);
       }
-      setShowPreview(true);
     } else {
       alert('Selected text does not contain LaTeX commands');
     }
   };
 
-  const handlePrint = () => {
-    printTextToPDF(inputText);
+  const handlePrint = async () => {
+    // Filter out null refs
+    const validLatexRefs = latexRefs.current.filter(ref => ref !== null);
+    await printMixedContentToPDF(parsedParts, validLatexRefs);
   };
 
   let latexRefIndex = 0;
