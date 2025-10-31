@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { printTextToPDF } from './fractionJs';
 
+
 const FractionCanvas = () => {
   const [inputText, setInputText] = useState('');
 
   const handlePrint = () => {
-    if (inputText.trim()) {
+    if (inputText) {
       printTextToPDF(inputText);
     } else {
       alert('Please enter some text before printing');
     }
   };
+
 
   return (
     <div style={{ padding: '20px' }}>
