@@ -11,7 +11,7 @@ const style = {
   displayLine: { background: '#ffffff', color: '#000000', padding: '12px', borderRadius: '6px', fontSize: '20px', marginTop: '20px' }
 };
 
-const FractionCanvas = () => {
+const  FractionCanvas = () => {
   const [inputText, setInputText] = useState('');
   const latexRefs = useRef([]);
   const inputRef = useRef(null);

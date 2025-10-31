@@ -7,6 +7,7 @@ export const printMixedContentToPDF = async (parsedParts, latexRefs) => {
     unit: 'mm',
     format: 'a4'
   });
+  doc.setFont('Times', 'Roman');
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -64,7 +65,7 @@ export const printMixedContentToPDF = async (parsedParts, latexRefs) => {
           const imgData = canvas.toDataURL('image/png');
           
           // Calculate image dimensions to match text height
-          const imgHeightMM = lineHeight * 0.85; // Slightly smaller than line height
+          const imgHeightMM = lineHeight * 0.8; // Slightly smaller than line height
           const imgWidthMM = (canvas.width / canvas.height) * imgHeightMM;
           
           // Check if equation fits on current line
