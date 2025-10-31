@@ -45,7 +45,6 @@ const FractionCanvas = () => {
   };
 
   const handlePrint = async () => {
-    // Filter out null refs
     const validLatexRefs = latexRefs.current.filter(ref => ref !== null);
     await printMixedContentToPDF(parsedParts, validLatexRefs);
   };

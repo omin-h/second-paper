@@ -11,7 +11,6 @@ export const printMixedContentToPDF = async (parsedParts, latexRefs) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
-  const maxWidth = pageWidth - 2 * margin;
   
   let xPosition = margin;
   let yPosition = 20;
