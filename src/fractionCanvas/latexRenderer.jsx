@@ -36,54 +36,55 @@ export const LatexPreview = React.forwardRef(({ latex }, ref) => {
   );
 });
 
-export const parseLatexFromText = (text) => { 
-  const latexPattern = /\\[a-zA-Z]+(?:\{[^}]*\}|\([^)]*\))*|\\[^a-zA-Z\s]/g;
-  
-  if (!text.match(latexPattern)) {
-    return [{ type: 'text', content: text }];
-  }
-
-  const trimmed = text.trim();
-  if (trimmed.match(/^[i\s]*\\[a-zA-Z]/) && trimmed.match(latexPattern)) {
-    const backslashCount = (trimmed.match(/\\/g) || []).length;
-    if (backslashCount >= 2) {
-      return [{ type: 'latex', content: trimmed }];
-    }
-  }
-
-  const wrappedPattern = /\([^)]*\\[^)]*\)/g;
+export const parseLatexFromText = (text) => {
+  // If user wraps LaTeX with ** ... **, split by those markers
+  const explicitPattern = /\*\*([^*]+)\*\*/g;
   const parts = [];
   let lastIndex = 0;
+  let match;
 
-  const matches = [...text.matchAll(wrappedPattern)];
-
-  matches.forEach((match) => {
+  // First, handle explicit ** ... ** regions
+  while ((match = explicitPattern.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      parts.push({ 
-        type: 'text', 
-        content: text.slice(lastIndex, match.index) 
+      parts.push({
+        type: 'text',
+        content: text.slice(lastIndex, match.index)
       });
     }
-
-    const latexContent = match[0].slice(1, -1);
-    parts.push({ 
-      type: 'latex', 
-      content: latexContent 
+    parts.push({
+      type: 'latex',
+      content: match[1].trim()
     });
+    lastIndex = explicitPattern.lastIndex;
+  }
 
-    lastIndex = match.index + match[0].length;
-  });
-
+  // Add any remaining text after last **
   if (lastIndex < text.length) {
-    parts.push({ 
-      type: 'text', 
-      content: text.slice(lastIndex) 
-    });
+    text = text.slice(lastIndex);
+    // Now, split remaining text by LaTeX commands
+    const latexPattern = /\\[a-zA-Z]+(?:\{[^}]*\}|\([^)]*\))*|\\[^a-zA-Z\s]/g;
+    let lastLatexIndex = 0;
+    let latexMatch;
+    while ((latexMatch = latexPattern.exec(text)) !== null) {
+      if (latexMatch.index > lastLatexIndex) {
+        parts.push({
+          type: 'text',
+          content: text.slice(lastLatexIndex, latexMatch.index)
+        });
+      }
+      parts.push({
+        type: 'latex',
+        content: latexMatch[0]
+      });
+      lastLatexIndex = latexPattern.lastIndex;
+    }
+    if (lastLatexIndex < text.length) {
+      parts.push({
+        type: 'text',
+        content: text.slice(lastLatexIndex)
+      });
+    }
   }
 
-  if (parts.length === 0 && text.match(latexPattern)) {
-    return [{ type: 'latex', content: text }];
-  }
-
-  return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+  return parts;
 };

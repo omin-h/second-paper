@@ -32,13 +32,12 @@ const FractionCanvas = () => {
     const selectedText = inputText.slice(start, end);
 
     if (selectedText.includes('\\')) {
-      if (!selectedText.startsWith('(') || !selectedText.endsWith(')')) {
-        const newText = 
-          inputText.slice(0, start) + 
-          '(' + selectedText + ')' + 
-          inputText.slice(end);
-        setInputText(newText);
-      }
+      // Wrap selected text with ** ... **
+      const newText =
+        inputText.slice(0, start) +
+        '**' + selectedText + '**' +
+        inputText.slice(end);
+      setInputText(newText);
     } else {
       alert('Selected text does not contain LaTeX commands');
     }
@@ -60,7 +59,7 @@ const FractionCanvas = () => {
           ref={inputRef}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Type: Text \frac{\partial \mathbf{u}}{\partial t} more text"
+          placeholder=""
           style={style.input}
         />
         <button style={{ ...style.btn, ...style.btnConvert }} onClick={handleConvert}>
