@@ -1,4 +1,5 @@
 import { createListMarker, calculateListIndent, processListStart, processListEnd } from './listHelpers.js';
+import { printMixedText } from './mathTextRenderer.js';
 
 export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
   const parser = new DOMParser();
@@ -149,9 +150,34 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
   const getWidth = (text, style) => {
     const prev = doc.getFont();
     setFontForStyle(style || {});
-    const w = doc.getTextWidth(text);
+    
+    // Calculate width considering math symbols, superscripts, subscripts
+    let totalWidth = 0;
+    const normalSize = doc.internal.getFontSize();
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      
+      // Import helper functions from mathTextRenderer
+      const isMathSymbol = (c) => /[π√∫∞≤≥±→←∑∏∂∇∆∈∉∪∩⊂⊃∀∃∧∨¬∝∞≠≈≡≅∼⊕⊗∠∥⊥°′″⁄]/.test(c);
+      const isSuperscript = (c) => /[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿᵃᵇᶜᵈᵉᶠᵍʰⁱʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ]/.test(c);
+      const isSubscript = (c) => /[₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓ]/.test(c);
+      
+      if (isSuperscript(char) || isSubscript(char)) {
+        doc.setFontSize(normalSize * 0.6);
+        totalWidth += doc.getTextWidth(char);
+        doc.setFontSize(normalSize);
+      } else if (isMathSymbol(char)) {
+        doc.setFont("NotoSansMath");
+        totalWidth += doc.getTextWidth(char);
+        setFontForStyle(style || {});
+      } else {
+        totalWidth += doc.getTextWidth(char);
+      }
+    }
+    
     doc.setFont(prev.fontName, prev.fontStyle);
-    return w;
+    return totalWidth;
   };
 
   const lines = [];
@@ -256,13 +282,16 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
     for (let si = 0; si < line.segments.length; si++) {
       const seg = line.segments[si];
       setFontForStyle(seg.style || {});
-      doc.text(seg.text, xPos, y);
+      
+      // Use printMixedText for math symbol support
+      const newX = printMixedText(doc, seg.text, xPos, y);
+      
       if (seg.style && seg.style.underline) {
         const w = doc.getTextWidth(seg.text);
         doc.setLineWidth(0.2);
         doc.line(xPos, y + 1, xPos + w, y + 1);
       }
-      xPos += doc.getTextWidth(seg.text);
+      xPos = newX;
     }
     // Use consistent line spacing for wrapped list items to avoid overlap
     y += lineHeight;

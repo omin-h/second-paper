@@ -1,3 +1,5 @@
+import { printMixedText } from './mathTextRenderer.js';
+
 export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, config) => {
   return async (imageData, imageHeight, currentY) => {
     currentY += config.spacing.beforeImage || 0;
@@ -60,7 +62,8 @@ export const createTableRenderer = (doc, pageHeight, margin, contentWidth, drawP
         const textX = x + (colWidth - textWidth) / 2;
         const textY = y + (rowHeight / 2) + 2;
         
-        doc.text(cellText, textX, textY);
+        // Use printMixedText for math symbol support
+        printMixedText(doc, cellText, textX, textY);
       });
     });
 

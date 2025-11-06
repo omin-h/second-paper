@@ -323,7 +323,7 @@ export default function SecondPaper() {
   };
 
   const getSubQuestionLabel = (index) => {
-    return String.fromCharCode(97 + index); // a, b, c, d...
+    return String.fromCharCode(97 + index);
   };
 
   const getRomanNumeral = (index) => {

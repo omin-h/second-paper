@@ -146,16 +146,19 @@ export const printMixedText = (doc, text, x, y) => {
       doc.text(superscriptToNormal(char), currentX, y - 2);
       currentX += doc.getTextWidth(superscriptToNormal(char));
       doc.setFontSize(normalSize);
+
     } else if (isSubscript(char)) {
       doc.setFontSize(normalSize * 0.6);
       doc.setFont("times");
       doc.text(subscriptToNormal(char), currentX, y + 1.5);
       currentX += doc.getTextWidth(subscriptToNormal(char));
       doc.setFontSize(normalSize);
+
     } else if (isMathSymbol(char)) {
       doc.setFont("NotoSansMath");
       doc.text(char, currentX, y);
       currentX += doc.getTextWidth(char);
+      
     } else {
       doc.setFont("times");
       doc.text(char, currentX, y);

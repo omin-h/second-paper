@@ -13,6 +13,26 @@ export const printPaper = async (questions) => {
       orientation: PDF_CONFIG.orientation
     });
 
+    // Load math font
+    try {
+      const response = await fetch("/fonts/NotoSansMath-Regular.ttf");
+      const fontData = await response.arrayBuffer();
+      
+      // Convert to base64
+      const base64Font = btoa(
+        new Uint8Array(fontData).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ""
+        )
+      );
+
+      // Add math font to jsPDF
+      doc.addFileToVFS("NotoSansMath.ttf", base64Font);
+      doc.addFont("NotoSansMath.ttf", "NotoSansMath", "normal");
+    } catch (err) {
+      console.error("Math font loading failed:", err);
+    }
+
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = PDF_CONFIG.margin;
