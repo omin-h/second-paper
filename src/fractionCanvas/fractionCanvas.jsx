@@ -44,7 +44,24 @@ const  FractionCanvas = () => {
   };
 
   const handlePrint = async () => {
+    console.log('=== BEFORE TRANSFER ===');
+    console.log('parsedParts:', parsedParts);
+    console.log('latexRefs.current:', latexRefs.current);
+    
     const validLatexRefs = latexRefs.current.filter(ref => ref !== null);
+    
+    console.log('validLatexRefs count:', validLatexRefs.length);
+    console.log('validLatexRefs:', validLatexRefs);
+    
+    // Log each element
+    validLatexRefs.forEach((ref, index) => {
+      console.log(`Ref ${index}:`, ref);
+      console.log(`  - tagName: ${ref.tagName}`);
+      console.log(`  - innerHTML:`, ref.innerHTML);
+      console.log(`  - clientWidth: ${ref.clientWidth}px`);
+      console.log(`  - clientHeight: ${ref.clientHeight}px`);
+    });
+    
     await printMixedContentToPDF(parsedParts, validLatexRefs);
   };
 
@@ -78,7 +95,10 @@ const  FractionCanvas = () => {
               <LatexPreview
                 key={idx}
                 latex={part.content}
-                ref={el => latexRefs.current[currentRef] = el}
+                ref={el => {
+                  latexRefs.current[currentRef] = el;
+                  console.log(`Setting latexRefs[${currentRef}]:`, el);
+                }}
               />
             );
           }

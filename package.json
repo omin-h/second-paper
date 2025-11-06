@@ -12,8 +12,10 @@
   },
   "dependencies": {
     "html2canvas": "^1.4.1",
+    "jquery": "^3.7.1",
     "jspdf": "^3.0.3",
     "katex": "^0.16.25",
+    "mathquill": "^0.10.1-a",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

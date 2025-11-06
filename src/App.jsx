@@ -10,9 +10,9 @@ function App() {
   return (
     <>
       {/* <SuperscriptInput /> */}
-      <FractionCanvas />
+      {/* <FractionCanvas /> */}
       {/* <OverlineInput /> */}
-      {/* <SecondPaper /> */}
+      <SecondPaper />
     </>
   );
 }
