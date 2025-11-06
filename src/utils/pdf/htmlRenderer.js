@@ -269,6 +269,8 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
       // Push line only when starting a new list (not for each item)
       if (tk.level === 0) {
         pushLine(isCurrentListItem);
+        // Add a marker for spacing before list
+        lines.push({ segments: [], indent: 0, isListItem: false, beforeList: true });
       }
       continue;
     }
@@ -320,6 +322,11 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
     // Use smaller line spacing for list items
     const currentLineHeight = line.isListItem ? 5.5 : lineHeight;
     y += currentLineHeight;
+    
+    // Add spacing before list starts
+    if (line.beforeList) {
+      y -= 5; 
+    }
     
     // Add negative spacing after list ends to reduce gap
     if (line.afterList) {
