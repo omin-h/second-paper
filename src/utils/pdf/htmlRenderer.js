@@ -112,7 +112,11 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
         const listType = tag === 'ul' ? 'ul' : 'ol';
         const frame = { type: listType, counter: 0 };
         const newStack = [...listStack, frame];
+        // Add list start token to trigger new line before first item
+        tokens.push({ type: 'listStart', level: listStack.length });
         node.childNodes.forEach(child => collect(child, newStyle, newStack));
+        // Add list end token to reduce spacing after list
+        tokens.push({ type: 'listEnd', level: listStack.length });
         return;
       }
 
@@ -191,9 +195,13 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
     lines.push({ segments: currentLine, indent: activeIndent, isListItem });
     currentLine = [];
     currentLineWidth = 0;
-    activeIndent = 0;
-    pendingIndent = 0;
-    isCurrentListItem = false;
+    // Don't reset activeIndent and pendingIndent if we're in a list item
+    // This keeps the indent for wrapped lines
+    if (!isListItem) {
+      activeIndent = 0;
+      pendingIndent = 0;
+    }
+    isCurrentListItem = isListItem;
   };
 
   const appendToken = (tokenText, tokenStyle) => {
@@ -257,15 +265,31 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
       pushLine(isCurrentListItem);
       continue;
     }
+    if (tk.type === 'listStart') {
+      // Push line only when starting a new list (not for each item)
+      if (tk.level === 0) {
+        pushLine(isCurrentListItem);
+      }
+      continue;
+    }
     if (tk.type === 'liStart') {
       const listState = processListStart(tk, pushLine, appendToken);
       pendingIndent = listState.pendingIndent;
       isCurrentListItem = listState.isCurrentListItem;
+      // Now append the bullet after setting pendingIndent
+      appendToken(listState.bullet, { bold: false, italic: false, underline: false });
       continue;
     }
     if (tk.type === 'liEnd') {
       const listState = processListEnd(pushLine, isCurrentListItem);
       isCurrentListItem = listState.isCurrentListItem;
+      continue;
+    }
+    if (tk.type === 'listEnd') {
+      // Mark that the next line follows a list end
+      if (tk.level === 0) {
+        lines.push({ segments: [], indent: 0, isListItem: false, afterList: true });
+      }
       continue;
     }
     if (tk.type === 'text') {
@@ -293,8 +317,14 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
       }
       xPos = newX;
     }
-    // Use consistent line spacing for wrapped list items to avoid overlap
-    y += lineHeight;
+    // Use smaller line spacing for list items
+    const currentLineHeight = line.isListItem ? 5.5 : lineHeight;
+    y += currentLineHeight;
+    
+    // Add negative spacing after list ends to reduce gap
+    if (line.afterList) {
+      y -= 10;
+    }
   }
 
   doc.setFont("times", "normal");

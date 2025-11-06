@@ -3,17 +3,17 @@ export const createListMarker = (listType, index) => {
 };
 
 export const calculateListIndent = (level) => {
-  return 6 * (level + 1);
+  return 7 * (level + 1);
 };
 
 export const processListStart = (token, pushLine, appendToken) => {
-  pushLine();
-  const pendingIndent = calculateListIndent(token.level);
+  const indent = calculateListIndent(token.level);
   const bullet = createListMarker(token.listType, token.index);
-  appendToken(bullet, { bold: false, italic: false, underline: false });
   
+  // Return indent first so it can be set before appending bullet
   return {
-    pendingIndent,
+    pendingIndent: indent,
+    bullet: bullet,
     isCurrentListItem: true
   };
 };
