@@ -31,42 +31,97 @@ export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, con
 };
 
 export const createTableRenderer = (doc, pageHeight, margin, contentWidth, drawPageBorder, config) => {
+  // Helper function to wrap text into multiple lines
+  const wrapText = (text, maxWidth) => {
+    if (!text) return [''];
+    
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testWidth = doc.getTextWidth(testLine);
+
+      if (testWidth > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    return lines.length > 0 ? lines : [''];
+  };
+
   return (tableData, tableCols, currentY) => {
     currentY += config.spacing.beforeTable || 0;
 
     const tableWidth = contentWidth * (config.table.widthPercentage || 0.7);
     const colWidth = tableWidth / tableCols;
-    const rowHeight = config.table.rowHeight || 8;
-    const tableHeight = tableData.length * rowHeight;
+    const baseRowHeight = config.table.rowHeight || 8;
+    const cellPadding = 2;
+    const maxCellWidth = colWidth - (cellPadding * 2);
+    const lineHeight = 4;
 
-    if (currentY + tableHeight > pageHeight - margin) {
+    doc.setFont(config.font.family, "normal");
+    doc.setFontSize(config.font.size.table);
+
+    // Calculate row heights based on wrapped text
+    const rowHeights = tableData.map(row => {
+      let maxLines = 1;
+      row.forEach(cell => {
+        const cellText = cell || "";
+        const lines = wrapText(cellText, maxCellWidth);
+        maxLines = Math.max(maxLines, lines.length);
+      });
+      return Math.max(baseRowHeight, maxLines * lineHeight + cellPadding * 2);
+    });
+
+    const totalTableHeight = rowHeights.reduce((sum, height) => sum + height, 0);
+
+    if (currentY + totalTableHeight > pageHeight - margin) {
       doc.addPage();
       drawPageBorder();
       currentY = margin + config.spacing.topPageMargin + (config.spacing.beforeTable || 0);
     }
 
-    doc.setFont(config.font.family, "normal");
-    doc.setFontSize(config.font.size.table);
-    
     const tableStartX = margin + (contentWidth - tableWidth) / 2;
-    
+    let rowY = currentY;
+
     tableData.forEach((row, rowIndex) => {
+      const rowHeight = rowHeights[rowIndex];
+
       row.forEach((cell, colIndex) => {
         const x = tableStartX + (colIndex * colWidth);
-        const y = currentY + (rowIndex * rowHeight);
         
-        doc.rect(x, y, colWidth, rowHeight);
+        // Draw cell border
+        doc.rect(x, rowY, colWidth, rowHeight);
         
+        // Wrap and draw text
         const cellText = cell || "";
-        const textWidth = doc.getTextWidth(cellText);
-        const textX = x + (colWidth - textWidth) / 2;
-        const textY = y + (rowHeight / 2) + 2;
+        const lines = wrapText(cellText, maxCellWidth);
         
-        // Use printMixedText for math symbol support
-        printMixedText(doc, cellText, textX, textY);
+        const textStartY = rowY + cellPadding + lineHeight;
+        
+        lines.forEach((line, lineIndex) => {
+          const textWidth = doc.getTextWidth(line);
+          const textX = x + cellPadding + (maxCellWidth - textWidth) / 2;
+          const textY = textStartY + (lineIndex * lineHeight);
+          
+          // Use printMixedText for math symbol support
+          printMixedText(doc, line, textX, textY);
+        });
       });
+
+      rowY += rowHeight;
     });
 
-    return currentY + tableHeight;
+    return rowY;
   };
 };
