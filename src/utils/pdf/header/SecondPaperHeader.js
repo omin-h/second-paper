@@ -42,19 +42,22 @@ export class SecondPaperHeader {
   async renderWatermark(startY, examDetails) {
     try {
       // Load watermark image from the same folder
-      const response = await fetch('/src/utils/pdf/header/watermark.png');
+      const response = await fetch('/src/utils/pdf/header/watermark.jpg');
       const blob = await response.blob();
       
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           try {
+            const imgX = this.margin - 2.6; 
+            const imgWidth = this.pageWidth - this.margin * 2 + 5.2; 
+            
             this.doc.addImage(
               reader.result,
               'JPG',
-              this.margin,
-              startY,
-              this.pageWidth - this.margin * 2,
+              imgX,
+              startY - 7.8,
+              imgWidth,
               15
             );
             resolve(startY + 20);
