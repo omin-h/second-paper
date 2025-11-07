@@ -22,6 +22,8 @@ export const createDeepNestedSubQuestionRenderer = (
     currentY
   ) => {
     const hasDeepNestedSubQuestionText = deepNestedSub.text && deepNestedSub.text.trim() !== '';
+    const hasImage = deepNestedSub.image;
+    const isImageRight = hasImage && deepNestedSub.imageAlign === 'right';
 
     if (hasDeepNestedSubQuestionText) {
       // Estimate text height before rendering
@@ -68,9 +70,11 @@ export const createDeepNestedSubQuestionRenderer = (
       currentY += config.questionNumbering.deepNestedEmptyParentVerticalAdjustment;
       deepNestedMargin = nestedMargin + nestedLabelWidth + config.questionNumbering.deepNestedEmptyParentOffset + deepExtraIndent;
       newFirstDeepPlaced = true;
+
     } else if (isNestedSubQuestionEmpty && deepNestedIdx > 0 && firstDeepPlacedOnSameLine) {
       deepNestedMargin = nestedMargin + nestedLabelWidth + config.questionNumbering.deepNestedEmptyParentOffset + deepExtraIndent;
     } else {
+
       if (!hasMainQuestionText) {
         const questionNumber = `${questionId}. `;
         const questionNumberWidth = doc.getTextWidth(questionNumber);
@@ -83,25 +87,54 @@ export const createDeepNestedSubQuestionRenderer = (
     doc.text(deepNestedLabel, deepNestedMargin, currentY);
     doc.setFont(config.font.family, "normal");
     
-    if (deepNestedSub.text && deepNestedSub.text.trim()) {
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const availableWidth = (pageWidth - margin) - (deepNestedMargin + deepNestedLabelWidth);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const fullContentWidth = pageWidth - 2 * margin;
+
+    if (hasDeepNestedSubQuestionText && isImageRight) {
+      const textStartY = currentY;
+      
+      // Place image first at current position
+      const imageResult = await addImage(deepNestedSub.image, config.images.nested, currentY, deepNestedSub.imageAlign);
+      
+     
+      const textWidth = fullContentWidth * 0.55;
       const textHeight = renderFormattedText(
         deepNestedSub.text,
         deepNestedMargin + deepNestedLabelWidth,
-        currentY,
-        availableWidth
+        textStartY,
+        textWidth
       );
-      currentY += textHeight;
-    } else {
-      currentY += config.spacing.emptyQuestionLineHeight;
-    }
-
-    currentY += config.spacing.betweenNestedSubQuestions;
-
-    if (deepNestedSub.image) {
-      currentY = await addImage(deepNestedSub.image, config.images.nested, currentY);
+      
+      // Use the maximum of text height or image height
+      currentY = Math.max(textStartY + textHeight, imageResult.finalY);
       currentY += config.spacing.afterImage;
+    } else {
+      // Handle text and centered image separately
+      if (hasDeepNestedSubQuestionText) {
+        const availableWidth = (pageWidth - margin) - (deepNestedMargin + deepNestedLabelWidth);
+        const textHeight = renderFormattedText(
+          deepNestedSub.text,
+          deepNestedMargin + deepNestedLabelWidth,
+          currentY,
+          availableWidth
+        );
+        currentY += textHeight;
+      } else {
+        currentY += config.spacing.emptyQuestionLineHeight;
+      }
+
+      currentY += config.spacing.betweenNestedSubQuestions;
+
+      // Render image separately if not right-aligned or no text
+      if (hasImage && !isImageRight) {
+        const imageResult = await addImage(deepNestedSub.image, config.images.nested, currentY, deepNestedSub.imageAlign || 'center');
+        currentY = imageResult.finalY;
+        currentY += config.spacing.afterImage;
+      } else if (hasImage && isImageRight && !hasDeepNestedSubQuestionText) {
+        const imageResult = await addImage(deepNestedSub.image, config.images.nested, currentY, deepNestedSub.imageAlign);
+        currentY = imageResult.finalY;
+        currentY += config.spacing.afterImage;
+      }
     }
 
     if (deepNestedSub.table) {

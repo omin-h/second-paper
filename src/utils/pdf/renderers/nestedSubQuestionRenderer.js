@@ -23,6 +23,8 @@ export const createNestedSubQuestionRenderer = (
   ) => {
     const hasNestedSubQuestionText = nestedSub.text && nestedSub.text.trim() !== '';
     const isSubQuestionEmpty = !subQuestion.text || subQuestion.text.trim() === '';
+    const hasImage = nestedSub.image;
+    const isImageRight = hasImage && nestedSub.imageAlign === 'right';
 
     if (hasNestedSubQuestionText) {
       // Estimate text height before rendering
@@ -67,25 +69,55 @@ export const createNestedSubQuestionRenderer = (
     doc.text(nestedLabel, nestedLabelCol - nestedLabelWidth, currentY);
     doc.setFont(config.font.family, "normal");
 
-    if (nestedSub.text && nestedSub.text.trim()) {
-      const textStartX = nestedLabelCol;
-      const availableWidth = (doc.internal.pageSize.getWidth() - margin) - textStartX;
+    const textStartX = nestedLabelCol;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const fullContentWidth = pageWidth - 2 * margin;
+
+    // If we have both text and right-aligned image, handle them together
+    if (hasNestedSubQuestionText && isImageRight) {
+      const textStartY = currentY;
+      
+      // Place image first at current position
+      const imageResult = await addImage(nestedSub.image, config.images.nested, currentY, nestedSub.imageAlign);
+      
+      const textWidth = fullContentWidth * 0.65;
       const textHeight = renderFormattedText(
         nestedSub.text,
         textStartX,
-        currentY,
-        availableWidth
+        textStartY,
+        textWidth
       );
-      currentY += textHeight;
-    } else {
-      currentY += config.spacing.emptyQuestionLineHeight;
-    }
-
-    currentY += config.spacing.betweenNestedSubQuestions;
-
-    if (nestedSub.image) {
-      currentY = await addImage(nestedSub.image, config.images.nested, currentY);
+      
+      // Use the maximum of text height or image height
+      currentY = Math.max(textStartY + textHeight, imageResult.finalY);
       currentY += config.spacing.afterImage;
+    } else {
+      // Handle text and centered image separately
+      if (hasNestedSubQuestionText) {
+        const availableWidth = (pageWidth - margin) - textStartX;
+        const textHeight = renderFormattedText(
+          nestedSub.text,
+          textStartX,
+          currentY,
+          availableWidth
+        );
+        currentY += textHeight;
+      } else {
+        currentY += config.spacing.emptyQuestionLineHeight;
+      }
+
+      currentY += config.spacing.betweenNestedSubQuestions;
+
+      // Render image separately if not right-aligned or no text
+      if (hasImage && !isImageRight) {
+        const imageResult = await addImage(nestedSub.image, config.images.nested, currentY, nestedSub.imageAlign || 'center');
+        currentY = imageResult.finalY;
+        currentY += config.spacing.afterImage;
+      } else if (hasImage && isImageRight && !hasNestedSubQuestionText) {
+        const imageResult = await addImage(nestedSub.image, config.images.nested, currentY, nestedSub.imageAlign);
+        currentY = imageResult.finalY;
+        currentY += config.spacing.afterImage;
+      }
     }
 
     if (nestedSub.table) {

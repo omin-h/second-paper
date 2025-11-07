@@ -51,7 +51,11 @@ export default function SecondPaper() {
               const newSubQuestions = [...q.subQuestions];
               const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
               const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
-              newDeepNestedSubQuestions[deepNestedIndex] = { ...newDeepNestedSubQuestions[deepNestedIndex], image: e.target.result };
+              newDeepNestedSubQuestions[deepNestedIndex] = { 
+                ...newDeepNestedSubQuestions[deepNestedIndex], 
+                image: e.target.result,
+                imageAlign: 'center' // default alignment
+              };
               newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
               newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
               return { ...q, subQuestions: newSubQuestions };
@@ -59,17 +63,29 @@ export default function SecondPaper() {
               // Update nested sub-question image
               const newSubQuestions = [...q.subQuestions];
               const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
-              newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], image: e.target.result };
+              newNestedSubQuestions[nestedIndex] = { 
+                ...newNestedSubQuestions[nestedIndex], 
+                image: e.target.result,
+                imageAlign: 'center' // default alignment
+              };
               newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
               return { ...q, subQuestions: newSubQuestions };
             } else if (subIndex !== null) {
               // Update sub-question image
               const newSubQuestions = [...q.subQuestions];
-              newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], image: e.target.result };
+              newSubQuestions[subIndex] = { 
+                ...newSubQuestions[subIndex], 
+                image: e.target.result,
+                imageAlign: 'center' // default alignment
+              };
               return { ...q, subQuestions: newSubQuestions };
             } else {
               // Update main question image
-              return { ...q, image: e.target.result };
+              return { 
+                ...q, 
+                image: e.target.result,
+                imageAlign: 'center' // default alignment
+              };
             }
           }
           return q;
@@ -102,6 +118,51 @@ export default function SecondPaper() {
           return { ...q, subQuestions: newSubQuestions };
         } else {
           return { ...q, image: null };
+        }
+      }
+      return q;
+    }));
+  };
+
+  const toggleImageAlign = (id, subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
+    setQuestions(questions.map(q => {
+      if (q.id === id) {
+        if (subIndex !== null && nestedIndex !== null && deepNestedIndex !== null) {
+          const newSubQuestions = [...q.subQuestions];
+          const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+          const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
+          const currentAlign = newDeepNestedSubQuestions[deepNestedIndex].imageAlign || 'center';
+          newDeepNestedSubQuestions[deepNestedIndex] = { 
+            ...newDeepNestedSubQuestions[deepNestedIndex], 
+            imageAlign: currentAlign === 'center' ? 'right' : 'center'
+          };
+          newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
+          newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
+          return { ...q, subQuestions: newSubQuestions };
+        } else if (subIndex !== null && nestedIndex !== null) {
+          const newSubQuestions = [...q.subQuestions];
+          const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+          const currentAlign = newNestedSubQuestions[nestedIndex].imageAlign || 'center';
+          newNestedSubQuestions[nestedIndex] = { 
+            ...newNestedSubQuestions[nestedIndex], 
+            imageAlign: currentAlign === 'center' ? 'right' : 'center'
+          };
+          newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
+          return { ...q, subQuestions: newSubQuestions };
+        } else if (subIndex !== null) {
+          const newSubQuestions = [...q.subQuestions];
+          const currentAlign = newSubQuestions[subIndex].imageAlign || 'center';
+          newSubQuestions[subIndex] = { 
+            ...newSubQuestions[subIndex], 
+            imageAlign: currentAlign === 'center' ? 'right' : 'center'
+          };
+          return { ...q, subQuestions: newSubQuestions };
+        } else {
+          const currentAlign = q.imageAlign || 'center';
+          return { 
+            ...q, 
+            imageAlign: currentAlign === 'center' ? 'right' : 'center'
+          };
         }
       }
       return q;
@@ -439,14 +500,22 @@ export default function SecondPaper() {
               <img 
                 src={question.image} 
                 alt={`Question ${label}`}
-                className="uploaded-image"
+                className={`uploaded-image ${question.imageAlign === 'right' ? 'image-right' : ''}`}
               />
-              <button
-                onClick={() => removeImage(questionId, subIndex, nestedIndex, deepNestedIndex)}
-                className="remove-image-button"
-              >
-                ✖ Remove Image
-              </button>
+              <div className="image-controls">
+                <button
+                  onClick={() => toggleImageAlign(questionId, subIndex, nestedIndex, deepNestedIndex)}
+                  className="toggle-align-button"
+                >
+                  {question.imageAlign === 'right' ? '⬅ Center' : '➡ Move Right'}
+                </button>
+                <button
+                  onClick={() => removeImage(questionId, subIndex, nestedIndex, deepNestedIndex)}
+                  className="remove-image-button"
+                >
+                  ✖ Remove Image
+                </button>
+              </div>
             </div>
           )}
 

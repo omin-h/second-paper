@@ -106,15 +106,12 @@
 /* Center all image containers */
 .image-preview-container,
 .preview-image-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   margin-top: 15px;
   padding: 10px;
   background: #f9f9f9;
   border: 2px dashed #ccc;
   border-radius: 4px;
-  text-align: center;
+  overflow: hidden; /* Clear floats */
 }
 
 /* Center all images and set max width/height */
@@ -126,6 +123,39 @@
   height: 120px; /* or your preferred height */
   object-fit: contain;
   border-radius: 4px;
+}
+
+/* Right-aligned image */
+.uploaded-image.image-right,
+.preview-image.image-right {
+  float: right;
+  width: 40%;
+  margin-left: 15px;
+  margin-right: 0;
+  margin-bottom: 10px;
+}
+
+/* Image controls */
+.image-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  clear: both; /* Clear the float */
+}
+
+.toggle-align-button {
+  padding: 5px 15px;
+  background: #FF9800;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.toggle-align-button:hover {
+  background: #F57C00;
 }
 
 .remove-image-button {

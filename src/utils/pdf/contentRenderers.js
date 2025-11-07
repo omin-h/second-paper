@@ -1,7 +1,7 @@
 import { printMixedText } from './mathTextRenderer.js';
 
 export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, config) => {
-  return async (imageData, imageHeight, currentY) => {
+  return async (imageData, imageHeight, currentY, imageAlign = 'center') => {
     currentY += config.spacing.beforeImage || 0;
 
     if (currentY + imageHeight > pageHeight - margin) {
@@ -13,25 +13,42 @@ export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, con
     const img = new Image();
     img.src = imageData;
     
+    let finalY = currentY;
+    let actualImageHeight = imageHeight;
+    
     await new Promise((resolve) => {
       img.onload = () => {
         const pageWidth = doc.internal.pageSize.getWidth();
         const aspectRatio = img.width / img.height;
-        const imageWidth = imageHeight * aspectRatio;
-        const xPos = (pageWidth - imageWidth) / 2;
         
-        doc.addImage(imageData, 'JPEG', xPos, currentY, imageWidth, imageHeight);
+        if (imageAlign === 'right') {
+          const contentWidth = pageWidth - 2 * margin;
+          const imageWidth = contentWidth * 0.3;
+          actualImageHeight = imageWidth / aspectRatio;
+          const xPos = pageWidth - margin - imageWidth;
+          
+          // Draw the image on the right
+          doc.addImage(imageData, 'JPEG', xPos, currentY, imageWidth, actualImageHeight);
+          finalY = currentY + actualImageHeight;
+        } else {
+          // Center-aligned (default)
+          const imageWidth = imageHeight * aspectRatio;
+          const xPos = (pageWidth - imageWidth) / 2;
+          
+          doc.addImage(imageData, 'JPEG', xPos, currentY, imageWidth, imageHeight);
+          finalY = currentY + imageHeight;
+        }
         resolve();
       };
       img.onerror = () => resolve();
     });
 
-    return currentY + imageHeight;
+    return { finalY, actualImageHeight };
   };
 };
 
+
 export const createTableRenderer = (doc, pageHeight, margin, contentWidth, drawPageBorder, config) => {
-  // Helper function to wrap text into multiple lines
   const wrapText = (text, maxWidth) => {
     if (!text) return [''];
     

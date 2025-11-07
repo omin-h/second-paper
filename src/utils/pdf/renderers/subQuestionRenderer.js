@@ -12,6 +12,8 @@ export const createSubQuestionRenderer = (
 ) => {
   return async (subQuestion, subIdx, questionId, hasMainQuestionText, currentY) => {
     const hasSubQuestionText = subQuestion.text && subQuestion.text.trim() !== '';
+    const hasImage = subQuestion.image;
+    const isImageRight = hasImage && subQuestion.imageAlign === 'right';
 
     if (hasSubQuestionText) {
       // Estimate text height before rendering
@@ -60,25 +62,55 @@ export const createSubQuestionRenderer = (
     doc.text(subLabel, actualSubMargin, currentY);
     doc.setFont(config.font.family, "normal");
     
-    if (subQuestion.text && subQuestion.text.trim()) {
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const availableWidth = (pageWidth - margin) - (actualSubMargin + subLabelWidth);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const fullContentWidth = pageWidth - 2 * margin;
+
+
+    if (hasSubQuestionText && isImageRight) {
+      const textStartY = currentY;
+      
+      // Place image first at current position
+      const imageResult = await addImage(subQuestion.image, config.images.sub, currentY, subQuestion.imageAlign);
+      
+  
+      const textWidth = fullContentWidth * 0.65;
       const textHeight = renderFormattedText(
         subQuestion.text,
         actualSubMargin + subLabelWidth,
-        currentY,
-        availableWidth
+        textStartY,
+        textWidth
       );
-      currentY += textHeight;
-    } else {
-      currentY += config.spacing.emptyQuestionLineHeight;
-    }
-
-    currentY += config.spacing.betweenSubQuestions;
-
-    if (subQuestion.image) {
-      currentY = await addImage(subQuestion.image, config.images.sub, currentY);
+      
+      // Use the maximum of text height or image height
+      currentY = Math.max(textStartY + textHeight, imageResult.finalY);
       currentY += config.spacing.afterImage;
+    } else {
+      // Handle text and centered image separately
+      if (hasSubQuestionText) {
+        const availableWidth = (pageWidth - margin) - (actualSubMargin + subLabelWidth);
+        const textHeight = renderFormattedText(
+          subQuestion.text,
+          actualSubMargin + subLabelWidth,
+          currentY,
+          availableWidth
+        );
+        currentY += textHeight;
+      } else {
+        currentY += config.spacing.emptyQuestionLineHeight;
+      }
+
+      currentY += config.spacing.betweenSubQuestions;
+
+      // Render image separately if not right-aligned or no text
+      if (hasImage && !isImageRight) {
+        const imageResult = await addImage(subQuestion.image, config.images.sub, currentY, subQuestion.imageAlign || 'center');
+        currentY = imageResult.finalY;
+        currentY += config.spacing.afterImage;
+      } else if (hasImage && isImageRight && !hasSubQuestionText) {
+        const imageResult = await addImage(subQuestion.image, config.images.sub, currentY, subQuestion.imageAlign);
+        currentY = imageResult.finalY;
+        currentY += config.spacing.afterImage;
+      }
     }
 
     if (subQuestion.table) {
