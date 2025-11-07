@@ -37,32 +37,7 @@ export const subscriptToNormal = (char) => {
   return map[char] || char;
 };
 
-// Draw a fraction (for jsPDF)
-export const drawFraction = (doc, numerator, denominator, x, y) => {
-  doc.setFont("times");
-  const normalSize = doc.internal.getFontSize();
-  const fractionSize = normalSize * 0.7;
-  
-  doc.setFontSize(fractionSize);
-  
-  const numWidth = doc.getTextWidth(numerator);
-  const denWidth = doc.getTextWidth(denominator);
-  const maxWidth = Math.max(numWidth, denWidth);
-  
-  const numX = x + (maxWidth - numWidth) / 2;
-  doc.text(numerator, numX, y - 1);
-  
-  doc.line(x, y, x + maxWidth, y);
-  
-  const denX = x + (maxWidth - denWidth) / 2;
-  doc.text(denominator, denX, y + 2.5);
-  
-  doc.setFontSize(normalSize);
-  
-  return x + maxWidth;
-};
-
-// Draw overline (for jsPDF)
+// Draw overline (NOT gate bar) above text
 export const drawOverline = (doc, textContent, x, y) => {
   doc.setFont("times");
   const textWidth = doc.getTextWidth(textContent);
@@ -70,48 +45,173 @@ export const drawOverline = (doc, textContent, x, y) => {
   // Draw the text
   doc.text(textContent, x, y);
   
-  // Draw line above text
-  doc.line(x, y - 3, x + textWidth, y - 3);
+  // Draw line above text with reduced thickness
+  const currentLineWidth = doc.getLineWidth();
+  doc.setLineWidth(0.2); // Thinner line for overline
+  doc.line(x, y - 3.5, x + textWidth, y - 3.5); // Lower position for single character
+  doc.setLineWidth(currentLineWidth); // Restore original line width
   
   return x + textWidth;
 };
 
-// Print mixed text with auto font switching, super/subscripts, and fractions
+// Draw fraction with horizontal line
+export const drawFraction = (doc, numerator, denominator, x, y) => {
+  doc.setFont("times");
+  const numWidth = doc.getTextWidth(numerator);
+  const denWidth = doc.getTextWidth(denominator);
+  const maxWidth = Math.max(numWidth, denWidth);
+  
+  const fontSize = doc.internal.getFontSize();
+  doc.setFontSize(fontSize * 0.8);
+  
+  // Draw numerator (centered above line)
+  const numX = x + (maxWidth - numWidth) / 2;
+  doc.text(numerator, numX, y - 2);
+  
+  // Draw horizontal line
+  doc.line(x, y - 0.5, x + maxWidth, y - 0.5);
+  
+  // Draw denominator (centered below line)
+  const denX = x + (maxWidth - denWidth) / 2;
+  doc.text(denominator, denX, y + 3);
+  
+  doc.setFontSize(fontSize);
+  
+  return x + maxWidth + 2;
+};
+
+
+// Print mixed text with auto font switching, super/subscripts, fractions, and overlines
 export const printMixedText = (doc, text, x, y) => {
   let currentX = x;
   const normalSize = doc.internal.getFontSize();
+  
+  // First pass: identify all overlined sections
+  const overlineSections = [];
+  for (let j = 0; j < text.length; j++) {
+    if (text[j + 1] === '\u0304') {
+      if (text[j] === ')') {
+        // Find matching (
+        let depth = 1;
+        let k = j - 1;
+        while (k >= 0 && depth > 0) {
+          if (text[k] === ')') depth++;
+          if (text[k] === '(') depth--;
+          k--;
+        }
+        overlineSections.push({ start: k + 1, end: j + 1, type: 'bracket' });
+      } else {
+        // Single character
+        overlineSections.push({ start: j, end: j + 1, type: 'single' });
+      }
+    }
+  }
   
   let i = 0;
   while (i < text.length) {
     const char = text[i];
     
-    // Overline pattern: text followed by '
-    if (i > 0 && char === "'") {
-      let j = i - 1;
-      let overlineContent = '';
-      let startPos = j;
-      if (text[j] === ')') {
-        let depth = 1;
-        j--;
-        while (j >= 0 && depth > 0) {
-          if (text[j] === ')') depth++;
-          if (text[j] === '(') depth--;
-          j--;
-        }
-        startPos = j + 1;
-        overlineContent = text.substring(startPos, i);
-      } else {
-        while (j >= 0 && /[A-Za-z0-9]/.test(text[j])) {
-          j--;
-        }
-        startPos = j + 1;
-        overlineContent = text.substring(startPos, i);
-      }
-      const backWidth = doc.getTextWidth(overlineContent);
-      currentX -= backWidth;
-      currentX = drawOverline(doc, overlineContent, currentX, y);
+    // Skip combining macron characters
+    if (char === '\u0304') {
       i++;
       continue;
+    }
+    
+    // Check if current position is start of an overlined section
+    const section = overlineSections.find(s => s.start === i);
+    
+    if (section) {
+      // Extract the content to overline (without macron)
+      let overlineContent = '';
+      for (let j = section.start; j < section.end; j++) {
+        if (text[j] !== '\u0304') {
+          overlineContent += text[j];
+        }
+      }
+      
+      // For bracket sections, handle nested overlines
+      if (section.type === 'bracket') {
+        const startX = currentX;
+        let hasNestedOverline = false;
+        
+        // Process inner content (which may have its own overlines)
+        let innerI = section.start;
+        while (innerI < section.end) {
+          const innerChar = text[innerI];
+          
+          // Skip macron
+          if (innerChar === '\u0304') {
+            innerI++;
+            continue;
+          }
+          
+          // Check if this position has an overline (nested)
+          const innerSection = overlineSections.find(s => s.start === innerI && s.end < section.end);
+          
+          if (innerSection) {
+            hasNestedOverline = true;
+            // Draw nested overline
+            let innerContent = '';
+            for (let k = innerSection.start; k < innerSection.end; k++) {
+              if (text[k] !== '\u0304') {
+                innerContent += text[k];
+              }
+            }
+            
+            // Draw inner overline at normal height
+            const currentLineWidth = doc.getLineWidth();
+            doc.setLineWidth(0.2);
+            doc.setFont("times");
+            const innerWidth = doc.getTextWidth(innerContent);
+            doc.text(innerContent, currentX, y);
+            doc.line(currentX, y - 3.5, currentX + innerWidth, y - 3.5);
+            doc.setLineWidth(currentLineWidth);
+            
+            currentX += innerWidth;
+            innerI = innerSection.end + 1; 
+            continue;
+          }
+          
+          // Normal character (process fractions, superscripts, subscripts, etc.)
+          if (isSuperscript(innerChar)) {
+            doc.setFontSize(normalSize * 0.6);
+            doc.setFont("times");
+            doc.text(superscriptToNormal(innerChar), currentX, y - 2);
+            currentX += doc.getTextWidth(superscriptToNormal(innerChar));
+            doc.setFontSize(normalSize);
+          } else if (isSubscript(innerChar)) {
+            doc.setFontSize(normalSize * 0.6);
+            doc.setFont("times");
+            doc.text(subscriptToNormal(innerChar), currentX, y + 1.5);
+            currentX += doc.getTextWidth(subscriptToNormal(innerChar));
+            doc.setFontSize(normalSize);
+          } else if (isMathSymbol(innerChar)) {
+            doc.setFont("NotoSansMath");
+            doc.text(innerChar, currentX, y);
+            currentX += doc.getTextWidth(innerChar);
+          } else {
+            doc.setFont("times");
+            doc.text(innerChar, currentX, y);
+            currentX += doc.getTextWidth(innerChar);
+          }
+          innerI++;
+        }
+        
+        const totalWidth = currentX - startX;
+        const currentLineWidth = doc.getLineWidth();
+        doc.setLineWidth(0.2);
+        const outerLineY = hasNestedOverline ? y - 4.2 : y - 3.5;
+        doc.line(startX, outerLineY, startX + totalWidth, outerLineY);
+        doc.setLineWidth(currentLineWidth);
+        
+        i = section.end + 1;
+        continue;
+      } else {
+        // Single character overline
+        currentX = drawOverline(doc, overlineContent, currentX, y);
+        i = section.end + 1;
+        continue;
+      }
     }
     
     // Fraction pattern: superscript chars + ⁄ + subscript chars
@@ -136,10 +236,8 @@ export const printMixedText = (doc, text, x, y) => {
         }
       }
     }
-    if (char === "'") {
-      i++;
-      continue;
-    }
+    
+    // Superscript rendering
     if (isSuperscript(char)) {
       doc.setFontSize(normalSize * 0.6);
       doc.setFont("times");

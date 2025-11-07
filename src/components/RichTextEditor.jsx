@@ -72,6 +72,42 @@ export default function RichTextEditor({ value, onChange, placeholder = "Type he
     editorRef.current?.focus();
   };
 
+  // Apply overline (using combining macron U+0304)
+  const applyOverline = () => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+    
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+    
+    if (!selectedText) {
+      alert("Please select some text first!");
+      return;
+    }
+    
+    // Add combining macron (̄) for overline
+    let overlineText;
+    
+    if (selectedText.length === 1) {
+      // Single character: A → Ā
+      overlineText = selectedText + '\u0304';
+    } else if (selectedText.startsWith('(') && selectedText.endsWith(')')) {
+      // Already has brackets: (A+B) → (A+B)̄
+      overlineText = selectedText + '\u0304';
+    } else {
+      // Multiple characters or expression: A+B → (A+B)̄
+      overlineText = '(' + selectedText + ')' + '\u0304';
+    }
+    
+    range.deleteContents();
+    range.insertNode(document.createTextNode(overlineText));
+    
+    // Clear selection and trigger change
+    selection.removeAllRanges();
+    handleInput();
+    editorRef.current?.focus();
+  };
+
   // Handle content changes
   const handleInput = () => {
     if (editorRef.current && onChange) {
@@ -143,7 +179,14 @@ export default function RichTextEditor({ value, onChange, placeholder = "Type he
           title="Subscript"
         >
           x₂
-        </button>        
+        </button>
+        <button
+          onClick={applyOverline}
+          style={toolbarButtonStyle}
+          title="Overline (NOT gate)"
+        >
+          A̅
+        </button>
         
         <div style={{ width: "1px", background: "#ccc", margin: "0 5px" }}></div>
         
