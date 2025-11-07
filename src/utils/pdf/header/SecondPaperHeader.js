@@ -51,7 +51,7 @@ export class SecondPaperHeader {
           try {
             this.doc.addImage(
               reader.result,
-              'PNG',
+              'JPG',
               this.margin,
               startY,
               this.pageWidth - this.margin * 2,
