@@ -1,9 +1,6 @@
 import React from "react";
-// import PdfTest from "./PdfTest";
-// import SuperscriptInput from './SuperscriptInput';
+import SuperscriptInput from './SuperscriptInput';
 import SecondPaper from "./secondPaper";
-// import OverlineInput from "./OverlineInput";
-
 // import FractionCanvas from "./fractionCanvas/fractionCanvas";
 
 function App() {
@@ -11,7 +8,7 @@ function App() {
     <>
       {/* <SuperscriptInput /> */}
       {/* <FractionCanvas /> */}
-      {/* <OverlineInput /> */}
+ 
       <SecondPaper />
     </>
   );
