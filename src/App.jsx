@@ -1,10 +1,10 @@
 import React from "react";
-import PdfTest from "./PdfTest";
-import SuperscriptInput from './SuperscriptInput';
+// import PdfTest from "./PdfTest";
+// import SuperscriptInput from './SuperscriptInput';
 import SecondPaper from "./secondPaper";
-import OverlineInput from "./OverlineInput";
+// import OverlineInput from "./OverlineInput";
 
-import FractionCanvas from "./fractionCanvas/fractionCanvas";
+// import FractionCanvas from "./fractionCanvas/fractionCanvas";
 
 function App() {
   return (

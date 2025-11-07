@@ -4,8 +4,9 @@ import { drawPageBorder } from './pdf/pdfHelpers.js';
 import { renderFormattedText } from './pdf/htmlRenderer.js';
 import { createImageRenderer, createTableRenderer } from './pdf/contentRenderers.js';
 import { createQuestionRenderer } from './pdf/questionRenderers.js';
+import { SecondPaperHeader } from './pdf/header/SecondPaperHeader.js';
 
-export const printPaper = async (questions) => {
+export const printPaper = async (questions, examDetails = {}) => {
   try {
     const doc = new jsPDF({
       unit: PDF_CONFIG.unit,
@@ -37,7 +38,6 @@ export const printPaper = async (questions) => {
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = PDF_CONFIG.margin;
     const contentWidth = pageWidth - (2 * margin);
-    let currentY = margin + 3;
 
     const drawBorder = () => drawPageBorder(
       doc,
@@ -48,6 +48,13 @@ export const printPaper = async (questions) => {
     );
 
     drawBorder();
+
+    // Add header
+    const header = new SecondPaperHeader(doc, pageWidth, pageHeight, margin);
+    let currentY = await header.renderHeader(examDetails);
+    
+    // Add small space after header
+    currentY += 3;
 
     doc.setFont(PDF_CONFIG.font.family, "normal");
     doc.setFontSize(PDF_CONFIG.font.size.default);

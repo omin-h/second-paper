@@ -1,4 +1,4 @@
-import { getRomanNumeral } from '../pdfHelpers.js';
+import { getNestedSubQuestionLabel } from '../pdfHelpers.js';
 
 export const createNestedSubQuestionRenderer = (
   doc,
@@ -46,7 +46,7 @@ export const createNestedSubQuestionRenderer = (
     doc.setFontSize(config.font.size.default);
     doc.setFont(config.font.family, "bold");
     
-    const nestedLabel = `${getRomanNumeral(nestedIdx)}) `;
+    const nestedLabel = `${getNestedSubQuestionLabel(nestedIdx)}) `;
     const nestedLabelWidth = doc.getTextWidth(nestedLabel);
     
     let nestedLabelCol;
@@ -54,8 +54,8 @@ export const createNestedSubQuestionRenderer = (
     // If sub-question is empty and this is the first nested sub-question
     if (isSubQuestionEmpty && nestedIdx === 0) {
       // Place it on the same line, right after the sub-question label
-      currentY -= config.spacing.emptyQuestionLineHeight + 2; // Remove the extra space added by empty sub-question
-      nestedLabelCol = actualSubMargin + subLabelWidth + 10; // Small gap after sub-question label
+      currentY -= config.spacing.emptyQuestionLineHeight + 2; 
+      nestedLabelCol = actualSubMargin + subLabelWidth + 10; 
     } else if (isSubQuestionEmpty && nestedIdx > 0) {
       // Continue on the normal flow for subsequent nested questions
       nestedLabelCol = actualSubMargin + config.questionNumbering.nestedLabelColumnOffset;

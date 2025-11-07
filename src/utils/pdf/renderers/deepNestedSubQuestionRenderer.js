@@ -1,4 +1,4 @@
-import { getSubQuestionLabel } from '../pdfHelpers.js';
+import { getDeepNestedSubQuestionLabel } from '../pdfHelpers.js';
 
 export const createDeepNestedSubQuestionRenderer = (
   doc,
@@ -56,7 +56,7 @@ export const createDeepNestedSubQuestionRenderer = (
     doc.setFontSize(config.font.size.default);
     doc.setFont(config.font.family, "bold");
     
-    const deepNestedLabel = `${getSubQuestionLabel(deepNestedIdx)}) `;
+    const deepNestedLabel = `${getDeepNestedSubQuestionLabel(deepNestedIdx)}) `;
     const deepNestedLabelWidth = doc.getTextWidth(deepNestedLabel);
     const isNestedSubQuestionEmpty = !nestedSub.text || nestedSub.text.trim() === '';
     const deepExtraIndent = config.spacing.deepExtraIndent;

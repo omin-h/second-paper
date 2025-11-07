@@ -189,7 +189,7 @@ export const renderFormattedText = (doc, html, x, startY, maxWidth) => {
   let currentLineWidth = 0;
   let pendingIndent = 0;
   let activeIndent = 0;
-  let isCurrentListItem = false; // Add this flag
+  let isCurrentListItem = false; 
 
   const pushLine = (isListItem = false) => {
     lines.push({ segments: currentLine, indent: activeIndent, isListItem });
