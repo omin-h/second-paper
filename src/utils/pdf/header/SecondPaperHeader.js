@@ -27,12 +27,12 @@ export class SecondPaperHeader {
     this.doc.setFontSize(8);
     this.doc.setFont("times", "normal");
 
-    this.doc.text("All Rights Reserved", this.margin + 4, startY);
+    this.doc.text("All Rights Reserved", this.margin + 4, startY-4);
 
     this.doc.text(
       `Teacher ID ${examDetails.teacherId || "TCH-XXXX"}`,
       this.pageWidth - this.margin - 32,
-      startY
+      startY-4
     );
 
     return startY + 5;
@@ -85,15 +85,15 @@ export class SecondPaperHeader {
 
     const titleLines = this.doc.splitTextToSize(
       cleanTitle,
-      this.pageWidth - this.margin * 2 - 10
+      this.pageWidth - this.margin * 2
     );
 
     titleLines.forEach(line => {
-      this.doc.text(line, this.pageWidth / 2, startY, { align: "center" });
+      this.doc.text(line, this.pageWidth / 2, startY - 2, { align: "center" });
       startY += 7;
     });
 
-    return startY;
+    return startY - 2;
   }
 
   // Render subtitle
