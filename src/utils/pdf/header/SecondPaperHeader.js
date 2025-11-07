@@ -37,12 +37,11 @@ export class SecondPaperHeader {
 
     return startY + 5;
   }
-
-  // Render watermark image
+  
   async renderWatermark(startY, examDetails) {
     try {
       // Load watermark image from the same folder
-      const response = await fetch('/src/utils/pdf/header/watermark.jpg');
+      const response = await fetch('/src/utils/pdf/header/watermark.png');
       const blob = await response.blob();
       
       return new Promise((resolve) => {
@@ -54,11 +53,11 @@ export class SecondPaperHeader {
             
             this.doc.addImage(
               reader.result,
-              'JPG',
+              'PNG',
               imgX,
               startY - 7.8,
               imgWidth,
-              15
+              10
             );
             resolve(startY + 20);
           } catch (error) {
@@ -92,11 +91,11 @@ export class SecondPaperHeader {
     );
 
     titleLines.forEach(line => {
-      this.doc.text(line, this.pageWidth / 2, startY - 2, { align: "center" });
-      startY += 7;
+      this.doc.text(line, this.pageWidth / 2, startY - 7, { align: "center" });
+      startY += 2;
     });
 
-    return startY - 2;
+    return startY;
   }
 
   // Render subtitle
