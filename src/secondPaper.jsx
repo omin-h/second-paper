@@ -323,11 +323,21 @@ export default function SecondPaper() {
   };
 
   const getSubQuestionLabel = (index) => {
+    // Roman numerals for sub-questions (i, ii, iii)
+    const romanNumerals = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 
+                           'xi', 'xii', 'xiii', 'xiv', 'xv', 'xvi', 'xvii', 'xviii', 'xix', 'xx'];
+    return romanNumerals[index] || `(${index + 1})`;
+  };
+
+  const getNestedSubQuestionLabel = (index) => {
+    // Letters for nested sub-questions (a, b, c)
     return String.fromCharCode(97 + index);
   };
 
-  const getRomanNumeral = (index) => {
-    const romanNumerals = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+  const getDeepNestedSubQuestionLabel = (index) => {
+    // Roman numerals for deep nested sub-questions (i, ii, iii)
+    const romanNumerals = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 
+                           'xi', 'xii', 'xiii', 'xiv', 'xv', 'xvi', 'xvii', 'xviii', 'xix', 'xx'];
     return romanNumerals[index] || `(${index + 1})`;
   };
 
@@ -344,9 +354,9 @@ export default function SecondPaper() {
   const renderQuestionBlock = (question, questionId, level = 'main', subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
     let label;
     if (level === 'deepNested') {
-      label = getSubQuestionLabel(deepNestedIndex);
+      label = getDeepNestedSubQuestionLabel(deepNestedIndex);
     } else if (level === 'nested') {
-      label = getRomanNumeral(nestedIndex);
+      label = getNestedSubQuestionLabel(nestedIndex);
     } else if (level === 'sub') {
       label = getSubQuestionLabel(subIndex);
     } else {
@@ -520,7 +530,7 @@ export default function SecondPaper() {
                     <div key={nestedIndex} className="nested-sub-question-wrapper">
                       <div className="nested-sub-question-header">
                         <h4 className="nested-sub-question-title">
-                          {getRomanNumeral(nestedIndex)}.
+                          {getNestedSubQuestionLabel(nestedIndex)}.
                         </h4>
                         <button
                           onClick={() => deleteSubQuestion(question.id, subIndex, nestedIndex)}
@@ -536,7 +546,7 @@ export default function SecondPaper() {
                         <div key={deepNestedIndex} className="deep-nested-sub-question-wrapper">
                           <div className="deep-nested-sub-question-header">
                             <h5 className="deep-nested-sub-question-title">
-                              {getSubQuestionLabel(deepNestedIndex)}.
+                              {getDeepNestedSubQuestionLabel(deepNestedIndex)}.
                             </h5>
                             <button
                               onClick={() => deleteSubQuestion(question.id, subIndex, nestedIndex, deepNestedIndex)}
@@ -670,20 +680,20 @@ export default function SecondPaper() {
                         <div key={nestedIndex}>
                           <div className="preview-question preview-nested-sub-question">
                             <div className="question-number nested-sub-question-number">
-                              {getRomanNumeral(nestedIndex)})
+                              {getNestedSubQuestionLabel(nestedIndex)})
                             </div>
                             <div className="question-content">
                               <div dangerouslySetInnerHTML={{ 
-                                __html: nestedSub.text || `<em style='color: #999;'>No nested sub-question ${getRomanNumeral(nestedIndex)} yet...</em>` 
+                                __html: nestedSub.text || `<em style='color: #999;'>No nested sub-question ${getNestedSubQuestionLabel(nestedIndex)} yet...</em>` 
                               }} />
                               {nestedSub.image && (
-                                <div className="preview-image-container">
-                                  <img 
-                                    src={nestedSub.image} 
-                                    alt={`Nested sub-question ${getRomanNumeral(nestedIndex)}`}
-                                    className="preview-image"
-                                  />
-                                </div>
+                              <div className="preview-image-container">
+                                <img 
+                                  src={nestedSub.image} 
+                                  alt={`Nested sub-question ${getNestedSubQuestionLabel(nestedIndex)}`}
+                                  className="preview-image"
+                                />
+                              </div>
                               )}
                               {nestedSub.table && (
                                 <div className="preview-table-container">
@@ -707,17 +717,17 @@ export default function SecondPaper() {
                           {nestedSub.subQuestions && nestedSub.subQuestions.map((deepNestedSub, deepNestedIndex) => (
                             <div key={deepNestedIndex} className="preview-question preview-deep-nested-sub-question">
                               <div className="question-number deep-nested-sub-question-number">
-                                {getSubQuestionLabel(deepNestedIndex)})
+                                {getDeepNestedSubQuestionLabel(deepNestedIndex)})
                               </div>
                               <div className="question-content">
                                 <div dangerouslySetInnerHTML={{ 
-                                  __html: deepNestedSub.text || `<em style='color: #999;'>No sub-question ${getSubQuestionLabel(deepNestedIndex)} yet...</em>` 
+                                  __html: deepNestedSub.text || `<em style='color: #999;'>No sub-question ${getDeepNestedSubQuestionLabel(deepNestedIndex)} yet...</em>` 
                                 }} />
                                 {deepNestedSub.image && (
                                   <div className="preview-image-container">
                                     <img 
                                       src={deepNestedSub.image} 
-                                      alt={`Deep nested sub-question ${getSubQuestionLabel(deepNestedIndex)}`}
+                                      alt={`Deep nested sub-question ${getDeepNestedSubQuestionLabel(deepNestedIndex)}`}
                                       className="preview-image"
                                     />
                                   </div>
