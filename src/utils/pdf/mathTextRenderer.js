@@ -57,26 +57,31 @@ export const drawOverline = (doc, textContent, x, y) => {
 // Draw fraction with horizontal line
 export const drawFraction = (doc, numerator, denominator, x, y) => {
   doc.setFont("times");
+  
+  const fontSize = doc.internal.getFontSize();
+  doc.setFontSize(fontSize * 0.8); // Set smaller size FIRST
+  
+  // NOW calculate widths with the smaller font
   const numWidth = doc.getTextWidth(numerator);
   const denWidth = doc.getTextWidth(denominator);
   const maxWidth = Math.max(numWidth, denWidth);
-  
-  const fontSize = doc.internal.getFontSize();
-  doc.setFontSize(fontSize * 0.8);
-  
+
   // Draw numerator (centered above line)
   const numX = x + (maxWidth - numWidth) / 2;
   doc.text(numerator, numX, y - 2);
-  
-  // Draw horizontal line
+
+  // Draw horizontal line with reduced thickness
+  const prevLineWidth = doc.getLineWidth();
+  doc.setLineWidth(0.2); // Thinner line
   doc.line(x, y - 0.5, x + maxWidth, y - 0.5);
-  
+  doc.setLineWidth(prevLineWidth); // Restore previous line width
+
   // Draw denominator (centered below line)
   const denX = x + (maxWidth - denWidth) / 2;
   doc.text(denominator, denX, y + 3);
-  
-  doc.setFontSize(fontSize);
-  
+
+  doc.setFontSize(fontSize); // Restore original size
+
   return x + maxWidth + 2;
 };
 

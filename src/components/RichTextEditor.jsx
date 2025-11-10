@@ -25,7 +25,9 @@ export default function RichTextEditor({ value, onChange, placeholder = "Type he
       '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾', 'n': 'ⁿ',
       'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ', 'h': 'ʰ', 'i': 'ⁱ',
       'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'o': 'ᵒ', 'p': 'ᵖ', 'r': 'ʳ', 's': 'ˢ',
-      't': 'ᵗ', 'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ'
+      't': 'ᵗ', 'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
+      'A': 'ᴬ', 'B': 'ᴮ', 'D': 'ᴰ', 'E': 'ᴱ', 'G': 'ᴳ', 'H': 'ᴴ', 'I': 'ᴵ', 'J': 'ᴶ', 'K': 'ᴷ', 'L': 'ᴸ',
+      'M': 'ᴹ', 'N': 'ᴺ', 'O': 'ᴼ', 'P': 'ᴾ', 'R': 'ᴿ', 'T': 'ᵀ', 'U': 'ᵁ', 'V': 'ⱽ', 'W': 'ᵂ'
     };
     
     const superscriptText = selectedText.split('').map(char => 
@@ -56,7 +58,9 @@ export default function RichTextEditor({ value, onChange, placeholder = "Type he
       '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
       '+': '₊', '-': '₋', '=': '₌', '(': '₍', ')': '₎',
       'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ', 'k': 'ₖ', 'l': 'ₗ', 'm': 'ₘ', 'n': 'ₙ',
-      'o': 'ₒ', 'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ', 'v': 'ᵥ', 'x': 'ₓ'
+      'o': 'ₒ', 'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ', 'v': 'ᵥ', 'x': 'ₓ',
+      'A': 'ₐ', 'E': 'ₑ', 'H': 'ₕ', 'I': 'ᵢ', 'J': 'ⱼ', 'K': 'ₖ', 'L': 'ₗ', 'M': 'ₘ', 'N': 'ₙ',
+      'O': 'ₒ', 'P': 'ₚ', 'R': 'ᵣ', 'S': 'ₛ', 'T': 'ₜ', 'U': 'ᵤ', 'V': 'ᵥ', 'X': 'ₓ', 'Y': 'ᵧ'
     };
     
     const subscriptText = selectedText.split('').map(char => 
@@ -102,6 +106,64 @@ export default function RichTextEditor({ value, onChange, placeholder = "Type he
     range.deleteContents();
     range.insertNode(document.createTextNode(overlineText));
     
+    // Clear selection and trigger change
+    selection.removeAllRanges();
+    handleInput();
+    editorRef.current?.focus();
+  };
+
+  // Convert selected text to fraction Unicode characters
+  const applyFraction = () => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+
+    if (!selectedText) {
+      alert("Please select text in fraction format (e.g., 20/100 or (x+y)/2)");
+      return;
+    }
+
+    // Match fraction pattern: a/b, (x+y)/2, etc.
+    const fractionMatch = selectedText.match(/^(.+)\/(.+)$/);
+    if (!fractionMatch) {
+      alert("Please select text in fraction format (e.g., 20/100 or (x+y)/2)");
+      return;
+    }
+
+    const numerator = fractionMatch[1].trim();
+    const denominator = fractionMatch[2].trim();
+
+    // Superscript and subscript maps (reuse from above)
+    const superscriptMap = {
+      '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+      '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾', 'n': 'ⁿ',
+      'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ', 'h': 'ʰ', 'i': 'ⁱ',
+      'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'o': 'ᵒ', 'p': 'ᵖ', 'r': 'ʳ', 's': 'ˢ',
+      't': 'ᵗ', 'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
+      'A': 'ᴬ', 'B': 'ᴮ', 'D': 'ᴰ', 'E': 'ᴱ', 'G': 'ᴳ', 'H': 'ᴴ', 'I': 'ᴵ', 'J': 'ᴶ', 'K': 'ᴷ', 'L': 'ᴸ',
+      'M': 'ᴹ', 'N': 'ᴺ', 'O': 'ᴼ', 'P': 'ᴾ', 'R': 'ᴿ', 'T': 'ᵀ', 'U': 'ᵁ', 'V': 'ⱽ', 'W': 'ᵂ'
+    };
+    const subscriptMap = {
+      '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+      '+': '₊', '-': '₋', '=': '₌', '(': '₍', ')': '₎',
+      'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ', 'k': 'ₖ', 'l': 'ₗ', 'm': 'ₘ', 'n': 'ₙ',
+      'o': 'ₒ', 'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ', 'v': 'ᵥ', 'x': 'ₓ',
+      'A': 'ₐ', 'E': 'ₑ', 'H': 'ₕ', 'I': 'ᵢ', 'J': 'ⱼ', 'K': 'ₖ', 'L': 'ₗ', 'M': 'ₘ', 'N': 'ₙ',
+      'O': 'ₒ', 'P': 'ₚ', 'R': 'ᵣ', 'S': 'ₛ', 'T': 'ₜ', 'U': 'ᵤ', 'V': 'ᵥ', 'X': 'ₓ', 'Y': 'ᵧ'
+    };
+
+    const toSuperscript = (char) => superscriptMap[char] || superscriptMap[char.toLowerCase()] || char;
+    const toSubscript = (char) => subscriptMap[char] || subscriptMap[char.toLowerCase()] || char;
+
+    const superNumerator = numerator.split('').map(toSuperscript).join('');
+    const subDenominator = denominator.split('').map(toSubscript).join('');
+    const fractionText = superNumerator + '⁄' + subDenominator;
+
+    range.deleteContents();
+    range.insertNode(document.createTextNode(fractionText));
+
     // Clear selection and trigger change
     selection.removeAllRanges();
     handleInput();
@@ -186,6 +248,13 @@ export default function RichTextEditor({ value, onChange, placeholder = "Type he
           title="Overline (NOT gate)"
         >
           A̅
+        </button>
+        <button
+          onClick={applyFraction}
+          style={toolbarButtonStyle}
+          title="Fraction (a/b → ᵃ⁄ᵦ)"
+        >
+          ¹⁄₂
         </button>
         
         <div style={{ width: "1px", background: "#ccc", margin: "0 5px" }}></div>
