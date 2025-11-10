@@ -1,5 +1,5 @@
 import React from "react";
-import SuperscriptInput from './SuperscriptInput';
+// import SuperscriptInput from './SuperscriptInput';
 import SecondPaper from "./secondPaper";
 // import FractionCanvas from "./fractionCanvas/fractionCanvas";
 
