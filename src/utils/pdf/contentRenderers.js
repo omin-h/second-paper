@@ -1,10 +1,12 @@
 import { printMixedText } from './mathTextRenderer.js';
 
 export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, config) => {
-  return async (imageData, imageHeight, currentY, imageAlign = 'center') => {
+  return async (imageData, imageHeight, currentY, imageAlign = 'center', imageIndex = 0, totalImages = 1) => {
     currentY += config.spacing.beforeImage || 0;
 
-    if (currentY + imageHeight > pageHeight - margin) {
+    // Only add page break for individual images (right-aligned or single center images)
+    // For inline images (multiple center images), page break is handled by the question renderer
+    if (imageAlign !== 'inline' && currentY + imageHeight > pageHeight - margin) {
       doc.addPage();
       drawPageBorder();
       currentY = margin + config.spacing.topPageMargin + (config.spacing.beforeImage || 0);
@@ -30,8 +32,40 @@ export const createImageRenderer = (doc, pageHeight, margin, drawPageBorder, con
           // Draw the image on the right
           doc.addImage(imageData, 'JPEG', xPos, currentY, imageWidth, actualImageHeight);
           finalY = currentY + actualImageHeight;
+        } else if (imageAlign === 'inline') {
+          // Inline rendering - place images side by side with FIXED HEIGHT, centered as a group
+          const contentWidth = pageWidth - 2 * margin;
+          const gap = 2; // Gap between images in mm
+          
+          // Use FIXED height, calculate width based on aspect ratio
+          let calculatedHeight = imageHeight; // Start with fixed height
+          let imageWidth = calculatedHeight * aspectRatio;
+          
+          // Calculate total width of all images plus gaps
+          const totalGap = (totalImages - 1) * gap;
+          let totalWidth = (imageWidth * totalImages) + totalGap;
+          
+          // If total width exceeds content width, scale down proportionally
+          if (totalWidth > contentWidth) {
+            const availableWidth = contentWidth - totalGap;
+            imageWidth = availableWidth / totalImages;
+            calculatedHeight = imageWidth / aspectRatio; // Recalculate height to maintain aspect ratio
+          }
+          
+          actualImageHeight = calculatedHeight;
+          totalWidth = (imageWidth * totalImages) + totalGap;
+          
+          // Center the entire group of images
+          const groupStartX = (pageWidth - totalWidth) / 2;
+          
+          // Calculate x position for this specific image
+          const xPos = groupStartX + (imageIndex * (imageWidth + gap));
+          
+          doc.addImage(imageData, 'JPEG', xPos, currentY, imageWidth, actualImageHeight);
+          finalY = currentY + actualImageHeight;
         } else {
-          // Center-aligned (default)
+          // Center-aligned (default) with FIXED HEIGHT
+          actualImageHeight = imageHeight; // Use the passed fixed height
           const imageWidth = imageHeight * aspectRatio;
           const xPos = (pageWidth - imageWidth) / 2;
           
@@ -76,8 +110,83 @@ export const createTableRenderer = (doc, pageHeight, margin, contentWidth, drawP
     return lines.length > 0 ? lines : [''];
   };
 
-  return (tableData, tableCols, currentY) => {
+  const parseHtmlTable = (htmlTable) => {
+    // Create a temporary DOM element to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlTable;
+    
+    const table = tempDiv.querySelector('table');
+    if (!table) {
+      console.error('No table found in HTML');
+      return { tableData: [], tableCols: 0 };
+    }
+
+    const rows = table.querySelectorAll('tr');
+    const tableData = [];
+    let maxCols = 0;
+
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td, th');
+      const rowData = [];
+      
+      cells.forEach(cell => {
+        // Extract text content, preserving basic formatting
+        let cellText = cell.innerHTML
+          .replace(/<br\s*\/?>/gi, '\n') // Convert <br> to newlines
+          .replace(/<[^>]*>/g, '') // Remove other HTML tags
+          .trim();
+        
+        // Decode HTML entities
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = cellText;
+        cellText = textarea.value;
+        
+        rowData.push(cellText);
+      });
+      
+      if (rowData.length > 0) {
+        tableData.push(rowData);
+        maxCols = Math.max(maxCols, rowData.length);
+      }
+    });
+
+    // Ensure all rows have the same number of columns
+    tableData.forEach(row => {
+      while (row.length < maxCols) {
+        row.push('');
+      }
+    });
+
+    return { tableData, tableCols: maxCols };
+  };
+
+  return (inputData, inputCols, currentY) => {
     currentY += config.spacing.beforeTable || 0;
+
+    let tableData, tableCols;
+
+    // Check if input is HTML string or array data
+    if (typeof inputData === 'string' && inputData.includes('<table')) {
+      // Parse HTML table
+      const parsed = parseHtmlTable(inputData);
+      tableData = parsed.tableData;
+      tableCols = parsed.tableCols;
+      
+      console.log('Parsed HTML table data:', tableData);
+      console.log('Table columns:', tableCols);
+    } else {
+      // Use existing array format (backward compatibility)
+      tableData = inputData;
+      tableCols = inputCols;
+      
+      console.log('Using array table data:', tableData);
+      console.log('Table columns:', tableCols);
+    }
+
+    if (!tableData || tableData.length === 0) {
+      console.warn('No table data to render');
+      return currentY;
+    }
 
     const tableWidth = contentWidth * (config.table.widthPercentage || 0.7);
     const colWidth = tableWidth / tableCols;
@@ -117,7 +226,8 @@ export const createTableRenderer = (doc, pageHeight, margin, contentWidth, drawP
       row.forEach((cell, colIndex) => {
         const x = tableStartX + (colIndex * colWidth);
         
-        // Draw cell border
+        // Draw cell border with reduced thickness
+        doc.setLineWidth(0.1); // Reduced from default (~0.2) to 0.1mm
         doc.rect(x, rowY, colWidth, rowHeight);
         
         // Wrap and draw text

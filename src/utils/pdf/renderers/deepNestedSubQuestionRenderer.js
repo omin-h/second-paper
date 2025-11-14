@@ -22,8 +22,8 @@ export const createDeepNestedSubQuestionRenderer = (
     currentY
   ) => {
     const hasDeepNestedSubQuestionText = deepNestedSub.text && deepNestedSub.text.trim() !== '';
-    const hasImage = deepNestedSub.image;
-    const isImageRight = hasImage && deepNestedSub.imageAlign === 'right';
+    const hasImages = deepNestedSub.images && deepNestedSub.images.length > 0;
+    const isImageRight = hasImages && deepNestedSub.imageAlign === 'right';
 
     if (hasDeepNestedSubQuestionText) {
       // Estimate text height before rendering
@@ -93,8 +93,8 @@ export const createDeepNestedSubQuestionRenderer = (
     if (hasDeepNestedSubQuestionText && isImageRight) {
       const textStartY = currentY;
       
-      // Place image first at current position
-      const imageResult = await addImage(deepNestedSub.image, config.images.nested, currentY, deepNestedSub.imageAlign);
+      // Place first image only (right-aligned allows only 1 image)
+      const imageResult = await addImage(deepNestedSub.images[0], config.images.nested, currentY, deepNestedSub.imageAlign);
       
      
       const textWidth = fullContentWidth * 0.55;
@@ -125,20 +125,47 @@ export const createDeepNestedSubQuestionRenderer = (
 
       currentY += config.spacing.betweenNestedSubQuestions;
 
-      // Render image separately if not right-aligned or no text
-      if (hasImage && !isImageRight) {
-        const imageResult = await addImage(deepNestedSub.image, config.images.nested, currentY, deepNestedSub.imageAlign || 'center');
-        currentY = imageResult.finalY;
+      // Render images separately if center-aligned or no text
+      if (hasImages && !isImageRight) {
+        // Use FIXED height for all images (single or multiple)
+        const imageCount = deepNestedSub.images.length;
+        const fixedHeight = config.images.fixed;
+        
+        // Check if images will fit on current page
+        if (currentY + fixedHeight > pageHeight - margin) {
+          doc.addPage();
+          drawPageBorder();
+          currentY = margin + config.spacing.topPageMargin;
+        }
+        
+        // Render all images inline (horizontally on one line)
+        const startY = currentY;
+        let maxImageHeight = 0;
+        
+        for (let i = 0; i < deepNestedSub.images.length; i++) {
+          const imageResult = await addImage(
+            deepNestedSub.images[i], 
+            fixedHeight, 
+            startY, 
+            imageCount > 1 ? 'inline' : 'center',
+            i,
+            imageCount
+          );
+          maxImageHeight = Math.max(maxImageHeight, imageResult.actualImageHeight);
+        }
+        
+        currentY = startY + maxImageHeight;
         currentY += config.spacing.afterImage;
-      } else if (hasImage && isImageRight && !hasDeepNestedSubQuestionText) {
-        const imageResult = await addImage(deepNestedSub.image, config.images.nested, currentY, deepNestedSub.imageAlign);
+      } else if (hasImages && isImageRight && !hasDeepNestedSubQuestionText) {
+        // Right-aligned image but no text (only first image)
+        const imageResult = await addImage(deepNestedSub.images[0], config.images.nested, currentY, deepNestedSub.imageAlign);
         currentY = imageResult.finalY;
         currentY += config.spacing.afterImage;
       }
     }
 
     if (deepNestedSub.table) {
-      currentY = addTable(deepNestedSub.table.data, deepNestedSub.table.cols, currentY);
+      currentY = addTable(deepNestedSub.table.html, deepNestedSub.table.cols, currentY);
       currentY += config.spacing.afterTable;
     }
 

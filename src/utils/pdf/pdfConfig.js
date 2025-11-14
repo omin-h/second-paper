@@ -16,7 +16,7 @@ export const PDF_CONFIG = {
   },
   spacing: {
     afterImage: 5,
-    beforeImage: -5,
+    beforeImage: -2,
     afterTable: 7,
     beforeTable: -3,
     betweenQuestions: 3,
@@ -46,7 +46,8 @@ export const PDF_CONFIG = {
   images: { // height
     main: 60,
     sub: 50,
-    nested: 30
+    nested: 30,
+    fixed: 40  
   },
   table: {
     widthPercentage: 0.85,

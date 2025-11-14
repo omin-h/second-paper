@@ -8,7 +8,8 @@ export default function SecondPaper() {
     { 
       id: 1, 
       text: "", 
-      image: null, 
+      images: [], 
+      imageAlign: 'center',
       table: null,
       subQuestions: []
     }
@@ -22,7 +23,8 @@ export default function SecondPaper() {
     setQuestions([...questions, { 
       id: questions.length + 1, 
       text: "", 
-      image: null, 
+      images: [], 
+      imageAlign: 'center',
       table: null,
       subQuestions: []
     }]);
@@ -51,10 +53,22 @@ export default function SecondPaper() {
               const newSubQuestions = [...q.subQuestions];
               const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
               const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
+              const currentAlign = newDeepNestedSubQuestions[deepNestedIndex].imageAlign || 'center';
+              const currentImages = newDeepNestedSubQuestions[deepNestedIndex].images || [];
+              
+              // Check if we can add more images
+              if (currentAlign === 'center' && currentImages.length >= 5) {
+                alert('Maximum 5 images allowed for center-aligned position');
+                return q;
+              }
+              if (currentAlign === 'right' && currentImages.length >= 1) {
+                alert('Only 1 image allowed for right-aligned position');
+                return q;
+              }
+              
               newDeepNestedSubQuestions[deepNestedIndex] = { 
                 ...newDeepNestedSubQuestions[deepNestedIndex], 
-                image: e.target.result,
-                imageAlign: 'center' // default alignment
+                images: [...currentImages, e.target.result]
               };
               newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
               newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
@@ -63,28 +77,64 @@ export default function SecondPaper() {
               // Update nested sub-question image
               const newSubQuestions = [...q.subQuestions];
               const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
+              const currentAlign = newNestedSubQuestions[nestedIndex].imageAlign || 'center';
+              const currentImages = newNestedSubQuestions[nestedIndex].images || [];
+              
+              // Check if we can add more images
+              if (currentAlign === 'center' && currentImages.length >= 5) {
+                alert('Maximum 5 images allowed for center-aligned position');
+                return q;
+              }
+              if (currentAlign === 'right' && currentImages.length >= 1) {
+                alert('Only 1 image allowed for right-aligned position');
+                return q;
+              }
+              
               newNestedSubQuestions[nestedIndex] = { 
                 ...newNestedSubQuestions[nestedIndex], 
-                image: e.target.result,
-                imageAlign: 'center' // default alignment
+                images: [...currentImages, e.target.result]
               };
               newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
               return { ...q, subQuestions: newSubQuestions };
             } else if (subIndex !== null) {
               // Update sub-question image
               const newSubQuestions = [...q.subQuestions];
+              const currentAlign = newSubQuestions[subIndex].imageAlign || 'center';
+              const currentImages = newSubQuestions[subIndex].images || [];
+              
+              // Check if we can add more images
+              if (currentAlign === 'center' && currentImages.length >= 5) {
+                alert('Maximum 5 images allowed for center-aligned position');
+                return q;
+              }
+              if (currentAlign === 'right' && currentImages.length >= 1) {
+                alert('Only 1 image allowed for right-aligned position');
+                return q;
+              }
+              
               newSubQuestions[subIndex] = { 
                 ...newSubQuestions[subIndex], 
-                image: e.target.result,
-                imageAlign: 'center' // default alignment
+                images: [...currentImages, e.target.result]
               };
               return { ...q, subQuestions: newSubQuestions };
             } else {
               // Update main question image
+              const currentAlign = q.imageAlign || 'center';
+              const currentImages = q.images || [];
+              
+              // Check if we can add more images
+              if (currentAlign === 'center' && currentImages.length >= 5) {
+                alert('Maximum 5 images allowed for center-aligned position');
+                return q;
+              }
+              if (currentAlign === 'right' && currentImages.length >= 1) {
+                alert('Only 1 image allowed for right-aligned position');
+                return q;
+              }
+              
               return { 
                 ...q, 
-                image: e.target.result,
-                imageAlign: 'center' // default alignment
+                images: [...currentImages, e.target.result]
               };
             }
           }
@@ -95,29 +145,45 @@ export default function SecondPaper() {
     }
   };
 
-  const removeImage = (id, subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
+  const removeImage = (id, imageIndex = 0, subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
     setQuestions(questions.map(q => {
       if (q.id === id) {
         if (subIndex !== null && nestedIndex !== null && deepNestedIndex !== null) {
           const newSubQuestions = [...q.subQuestions];
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
           const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
-          newDeepNestedSubQuestions[deepNestedIndex] = { ...newDeepNestedSubQuestions[deepNestedIndex], image: null };
+          const currentImages = newDeepNestedSubQuestions[deepNestedIndex].images || [];
+          newDeepNestedSubQuestions[deepNestedIndex] = { 
+            ...newDeepNestedSubQuestions[deepNestedIndex], 
+            images: currentImages.filter((_, idx) => idx !== imageIndex)
+          };
           newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
           newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
           return { ...q, subQuestions: newSubQuestions };
         } else if (subIndex !== null && nestedIndex !== null) {
           const newSubQuestions = [...q.subQuestions];
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
-          newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], image: null };
+          const currentImages = newNestedSubQuestions[nestedIndex].images || [];
+          newNestedSubQuestions[nestedIndex] = { 
+            ...newNestedSubQuestions[nestedIndex], 
+            images: currentImages.filter((_, idx) => idx !== imageIndex)
+          };
           newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
           return { ...q, subQuestions: newSubQuestions };
         } else if (subIndex !== null) {
           const newSubQuestions = [...q.subQuestions];
-          newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], image: null };
+          const currentImages = newSubQuestions[subIndex].images || [];
+          newSubQuestions[subIndex] = { 
+            ...newSubQuestions[subIndex], 
+            images: currentImages.filter((_, idx) => idx !== imageIndex)
+          };
           return { ...q, subQuestions: newSubQuestions };
         } else {
-          return { ...q, image: null };
+          const currentImages = q.images || [];
+          return { 
+            ...q, 
+            images: currentImages.filter((_, idx) => idx !== imageIndex)
+          };
         }
       }
       return q;
@@ -132,9 +198,16 @@ export default function SecondPaper() {
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
           const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
           const currentAlign = newDeepNestedSubQuestions[deepNestedIndex].imageAlign || 'center';
+          const newAlign = currentAlign === 'center' ? 'right' : 'center';
+          const currentImages = newDeepNestedSubQuestions[deepNestedIndex].images || [];
+          
+          // If switching to right and more than 1 image, keep only the first one
+          const newImages = newAlign === 'right' && currentImages.length > 1 ? [currentImages[0]] : currentImages;
+          
           newDeepNestedSubQuestions[deepNestedIndex] = { 
             ...newDeepNestedSubQuestions[deepNestedIndex], 
-            imageAlign: currentAlign === 'center' ? 'right' : 'center'
+            imageAlign: newAlign,
+            images: newImages
           };
           newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
           newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
@@ -143,25 +216,46 @@ export default function SecondPaper() {
           const newSubQuestions = [...q.subQuestions];
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
           const currentAlign = newNestedSubQuestions[nestedIndex].imageAlign || 'center';
+          const newAlign = currentAlign === 'center' ? 'right' : 'center';
+          const currentImages = newNestedSubQuestions[nestedIndex].images || [];
+          
+          // If switching to right and more than 1 image, keep only the first one
+          const newImages = newAlign === 'right' && currentImages.length > 1 ? [currentImages[0]] : currentImages;
+          
           newNestedSubQuestions[nestedIndex] = { 
             ...newNestedSubQuestions[nestedIndex], 
-            imageAlign: currentAlign === 'center' ? 'right' : 'center'
+            imageAlign: newAlign,
+            images: newImages
           };
           newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
           return { ...q, subQuestions: newSubQuestions };
         } else if (subIndex !== null) {
           const newSubQuestions = [...q.subQuestions];
           const currentAlign = newSubQuestions[subIndex].imageAlign || 'center';
+          const newAlign = currentAlign === 'center' ? 'right' : 'center';
+          const currentImages = newSubQuestions[subIndex].images || [];
+          
+          // If switching to right and more than 1 image, keep only the first one
+          const newImages = newAlign === 'right' && currentImages.length > 1 ? [currentImages[0]] : currentImages;
+          
           newSubQuestions[subIndex] = { 
             ...newSubQuestions[subIndex], 
-            imageAlign: currentAlign === 'center' ? 'right' : 'center'
+            imageAlign: newAlign,
+            images: newImages
           };
           return { ...q, subQuestions: newSubQuestions };
         } else {
           const currentAlign = q.imageAlign || 'center';
+          const newAlign = currentAlign === 'center' ? 'right' : 'center';
+          const currentImages = q.images || [];
+          
+          // If switching to right and more than 1 image, keep only the first one
+          const newImages = newAlign === 'right' && currentImages.length > 1 ? [currentImages[0]] : currentImages;
+          
           return { 
             ...q, 
-            imageAlign: currentAlign === 'center' ? 'right' : 'center'
+            imageAlign: newAlign,
+            images: newImages
           };
         }
       }
@@ -177,10 +271,22 @@ export default function SecondPaper() {
 
   const createTable = () => {
     const { questionId, subIndex, nestedIndex, deepNestedIndex } = showTableModal;
+    
+    // Generate HTML table structure
+    let htmlTable = '<table>';
+    for (let i = 0; i < tableRows; i++) {
+      htmlTable += '<tr>';
+      for (let j = 0; j < tableCols; j++) {
+        htmlTable += '<td></td>';
+      }
+      htmlTable += '</tr>';
+    }
+    htmlTable += '</table>';
+    
     const newTable = {
       rows: tableRows,
       cols: tableCols,
-      data: Array(tableRows).fill(null).map(() => Array(tableCols).fill(''))
+      html: htmlTable
     };
 
     setQuestions(questions.map(q => {
@@ -213,6 +319,18 @@ export default function SecondPaper() {
   };
 
   const updateTableCell = (questionId, rowIndex, colIndex, value, subIndex = null, nestedIndex = null, deepNestedIndex = null) => {
+    const updateHtmlTable = (htmlTable, rowIdx, colIdx, newValue) => {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlTable;
+      const table = tempDiv.querySelector('table');
+      const rows = table.querySelectorAll('tr');
+      const targetCell = rows[rowIdx]?.querySelectorAll('td, th')[colIdx];
+      if (targetCell) {
+        targetCell.textContent = newValue;
+      }
+      return tempDiv.innerHTML;
+    };
+    
     setQuestions(questions.map(q => {
       if (q.id === questionId) {
         if (subIndex !== null && nestedIndex !== null && deepNestedIndex !== null && 
@@ -220,14 +338,10 @@ export default function SecondPaper() {
           const newSubQuestions = [...q.subQuestions];
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
           const newDeepNestedSubQuestions = [...newNestedSubQuestions[nestedIndex].subQuestions];
-          const newData = newDeepNestedSubQuestions[deepNestedIndex].table.data.map((row, rIdx) => 
-            rIdx === rowIndex 
-              ? row.map((cell, cIdx) => cIdx === colIndex ? value : cell)
-              : row
-          );
+          const updatedHtml = updateHtmlTable(newDeepNestedSubQuestions[deepNestedIndex].table.html, rowIndex, colIndex, value);
           newDeepNestedSubQuestions[deepNestedIndex] = { 
             ...newDeepNestedSubQuestions[deepNestedIndex], 
-            table: { ...newDeepNestedSubQuestions[deepNestedIndex].table, data: newData } 
+            table: { ...newDeepNestedSubQuestions[deepNestedIndex].table, html: updatedHtml } 
           };
           newNestedSubQuestions[nestedIndex] = { ...newNestedSubQuestions[nestedIndex], subQuestions: newDeepNestedSubQuestions };
           newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
@@ -235,36 +349,24 @@ export default function SecondPaper() {
         } else if (subIndex !== null && nestedIndex !== null && q.subQuestions[subIndex]?.subQuestions[nestedIndex]?.table) {
           const newSubQuestions = [...q.subQuestions];
           const newNestedSubQuestions = [...newSubQuestions[subIndex].subQuestions];
-          const newData = newNestedSubQuestions[nestedIndex].table.data.map((row, rIdx) => 
-            rIdx === rowIndex 
-              ? row.map((cell, cIdx) => cIdx === colIndex ? value : cell)
-              : row
-          );
+          const updatedHtml = updateHtmlTable(newNestedSubQuestions[nestedIndex].table.html, rowIndex, colIndex, value);
           newNestedSubQuestions[nestedIndex] = { 
             ...newNestedSubQuestions[nestedIndex], 
-            table: { ...newNestedSubQuestions[nestedIndex].table, data: newData } 
+            table: { ...newNestedSubQuestions[nestedIndex].table, html: updatedHtml } 
           };
           newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
           return { ...q, subQuestions: newSubQuestions };
         } else if (subIndex !== null && q.subQuestions[subIndex]?.table) {
           const newSubQuestions = [...q.subQuestions];
-          const newData = newSubQuestions[subIndex].table.data.map((row, rIdx) => 
-            rIdx === rowIndex 
-              ? row.map((cell, cIdx) => cIdx === colIndex ? value : cell)
-              : row
-          );
+          const updatedHtml = updateHtmlTable(newSubQuestions[subIndex].table.html, rowIndex, colIndex, value);
           newSubQuestions[subIndex] = { 
             ...newSubQuestions[subIndex], 
-            table: { ...newSubQuestions[subIndex].table, data: newData } 
+            table: { ...newSubQuestions[subIndex].table, html: updatedHtml } 
           };
           return { ...q, subQuestions: newSubQuestions };
         } else if (q.table) {
-          const newData = q.table.data.map((row, rIdx) => 
-            rIdx === rowIndex 
-              ? row.map((cell, cIdx) => cIdx === colIndex ? value : cell)
-              : row
-          );
-          return { ...q, table: { ...q.table, data: newData } };
+          const updatedHtml = updateHtmlTable(q.table.html, rowIndex, colIndex, value);
+          return { ...q, table: { ...q.table, html: updatedHtml } };
         }
       }
       return q;
@@ -312,7 +414,7 @@ export default function SecondPaper() {
           }
           newNestedSubQuestions[nestedIndex].subQuestions = [
             ...newNestedSubQuestions[nestedIndex].subQuestions,
-            { text: "", image: null, table: null }
+            { text: "", images: [], imageAlign: 'center', table: null }
           ];
           newSubQuestions[subIndex] = { ...newSubQuestions[subIndex], subQuestions: newNestedSubQuestions };
           return { ...q, subQuestions: newSubQuestions };
@@ -324,14 +426,15 @@ export default function SecondPaper() {
           }
           newSubQuestions[subIndex].subQuestions = [
             ...newSubQuestions[subIndex].subQuestions,
-            { text: "", image: null, table: null, subQuestions: [] }
+            { text: "", images: [], imageAlign: 'center', table: null, subQuestions: [] }
           ];
           return { ...q, subQuestions: newSubQuestions };
         } else {
           // Add main sub-question (a, b, c under main question)
           const newSubQuestions = [...q.subQuestions, { 
             text: "", 
-            image: null, 
+            images: [], 
+            imageAlign: 'center',
             table: null,
             subQuestions: []
           }];
@@ -404,6 +507,51 @@ export default function SecondPaper() {
 
   const handlePrint = async () => {
     setIsPrinting(true);
+    
+    // Console log all data being passed to print
+    console.log("=== PRINTING DATA (HTML FORMAT) ===");
+    console.log("Complete questions array:", questions);
+    
+    // Special logging for table data (now in HTML format)
+    questions.forEach((question, qIndex) => {
+      if (question.table) {
+        console.log(`Question ${question.id} has table:`, question.table);
+        console.log(`Table HTML for Question ${question.id}:`, question.table.html);
+      }
+      
+      // Check sub-questions for tables
+      if (question.subQuestions && question.subQuestions.length > 0) {
+        question.subQuestions.forEach((subQ, subIndex) => {
+          if (subQ.table) {
+            console.log(`Sub-question ${qIndex + 1}.${getSubQuestionLabel(subIndex)} has table:`, subQ.table);
+            console.log(`Table HTML for sub-question ${qIndex + 1}.${getSubQuestionLabel(subIndex)}:`, subQ.table.html);
+          }
+          
+          // Check nested sub-questions for tables
+          if (subQ.subQuestions && subQ.subQuestions.length > 0) {
+            subQ.subQuestions.forEach((nestedQ, nestedIndex) => {
+              if (nestedQ.table) {
+                console.log(`Nested sub-question ${qIndex + 1}.${getSubQuestionLabel(subIndex)}.${getNestedSubQuestionLabel(nestedIndex)} has table:`, nestedQ.table);
+                console.log(`Table HTML for nested sub-question ${qIndex + 1}.${getSubQuestionLabel(subIndex)}.${getNestedSubQuestionLabel(nestedIndex)}:`, nestedQ.table.html);
+              }
+              
+              // Check deep nested sub-questions for tables
+              if (nestedQ.subQuestions && nestedQ.subQuestions.length > 0) {
+                nestedQ.subQuestions.forEach((deepQ, deepIndex) => {
+                  if (deepQ.table) {
+                    console.log(`Deep nested sub-question ${qIndex + 1}.${getSubQuestionLabel(subIndex)}.${getNestedSubQuestionLabel(nestedIndex)}.${getDeepNestedSubQuestionLabel(deepIndex)} has table:`, deepQ.table);
+                    console.log(`Table HTML for deep nested sub-question ${qIndex + 1}.${getSubQuestionLabel(subIndex)}.${getNestedSubQuestionLabel(nestedIndex)}.${getDeepNestedSubQuestionLabel(deepIndex)}:`, deepQ.table.html);
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    console.log("=== END PRINTING DATA ===");
+    
     const result = await printPaper(questions);
     setIsPrinting(false);
     
@@ -495,61 +643,87 @@ export default function SecondPaper() {
             </button>
           )}
 
-          {question.image && (
-            <div className="image-preview-container">
-              <img 
-                src={question.image} 
-                alt={`Question ${label}`}
-                className={`uploaded-image ${question.imageAlign === 'right' ? 'image-right' : ''}`}
-              />
-              <div className="image-controls">
+          {question.images && question.images.length > 0 && (
+            <div className="images-container">
+              <div className="image-controls-top">
                 <button
                   onClick={() => toggleImageAlign(questionId, subIndex, nestedIndex, deepNestedIndex)}
                   className="toggle-align-button"
                 >
                   {question.imageAlign === 'right' ? '⬅ Center' : '➡ Move Right'}
                 </button>
-                <button
-                  onClick={() => removeImage(questionId, subIndex, nestedIndex, deepNestedIndex)}
-                  className="remove-image-button"
-                >
-                  ✖ Remove Image
-                </button>
+                <span className="image-count">
+                  {question.images.length} / {question.imageAlign === 'right' ? '1' : '5'} images
+                </span>
+              </div>
+              <div className={`image-preview-container ${question.imageAlign === 'right' ? 'image-right' : 'images-inline'}`}>
+                {question.images.map((img, imgIndex) => (
+                  <div key={imgIndex} className="single-image-wrapper">
+                    <img 
+                      src={img} 
+                      alt={`Question ${label} - Image ${imgIndex + 1}`}
+                      className="uploaded-image"
+                    />
+                    <button
+                      onClick={() => removeImage(questionId, imgIndex, subIndex, nestedIndex, deepNestedIndex)}
+                      className="remove-single-image-button"
+                      title="Remove this image"
+                    >
+                      ✖
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {question.table && (
-            <div className="table-edit-container">
-              <div className="table-header">
-                <h4>Table ({question.table.rows} × {question.table.cols})</h4>
-                <button
-                  onClick={() => removeTable(questionId, subIndex, nestedIndex, deepNestedIndex)}
-                  className="remove-table-button"
-                >
-                  ✖ Remove Table
-                </button>
+          {question.table && (() => {
+            const getTableData = (htmlTable) => {
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = htmlTable;
+              const table = tempDiv.querySelector('table');
+              if (!table) return [];
+              const rows = table.querySelectorAll('tr');
+              return Array.from(rows).map(row => {
+                const cells = row.querySelectorAll('td, th');
+                return Array.from(cells).map(cell => cell.textContent || '');
+              });
+            };
+            
+            const tableData = getTableData(question.table.html);
+            
+            return (
+              <div className="table-edit-container">
+                <div className="table-header">
+                  <h4>Table ({question.table.rows} × {question.table.cols})</h4>
+                  <button
+                    onClick={() => removeTable(questionId, subIndex, nestedIndex, deepNestedIndex)}
+                    className="remove-table-button"
+                  >
+                    ✖ Remove Table
+                  </button>
+                </div>
+                <table className="editable-table">
+                  <tbody>
+                    {tableData.map((row, rowIndex) => (
+                      <tr key={rowIndex}>
+                        {row.map((cell, colIndex) => (
+                          <td key={colIndex}>
+                            <input
+                              type="text"
+                              value={cell}
+                              onChange={(e) => updateTableCell(questionId, rowIndex, colIndex, e.target.value, subIndex, nestedIndex, deepNestedIndex)}
+                              className="table-cell-input"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <table className="editable-table">
-                <tbody>
-                  {question.table.data.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {row.map((cell, colIndex) => (
-                        <td key={colIndex}>
-                          <input
-                            type="text"
-                            value={cell}
-                            onChange={(e) => updateTableCell(questionId, rowIndex, colIndex, e.target.value, subIndex, nestedIndex, deepNestedIndex)}
-                            className="table-cell-input"
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     );
@@ -670,29 +844,20 @@ export default function SecondPaper() {
                       </div>
                       <div className="question-content">
                         <div dangerouslySetInnerHTML={{ __html: question.text }} />
-                        {question.image && (
-                          <div className="preview-image-container">
-                            <img 
-                              src={question.image} 
-                              alt={`Question ${question.id}`}
-                              className="preview-image"
-                            />
+                        {question.images && question.images.length > 0 && (
+                          <div className={`preview-images-container ${question.imageAlign === 'right' ? 'preview-image-right' : 'preview-images-inline'}`}>
+                            {question.images.map((img, imgIndex) => (
+                              <img 
+                                key={imgIndex}
+                                src={img} 
+                                alt={`Question ${question.id} - Image ${imgIndex + 1}`}
+                                className="preview-image"
+                              />
+                            ))}
                           </div>
                         )}
                         {question.table && (
-                          <div className="preview-table-container">
-                            <table className="preview-table">
-                              <tbody>
-                                {question.table.data.map((row, rowIndex) => (
-                                  <tr key={rowIndex}>
-                                    {row.map((cell, colIndex) => (
-                                      <td key={colIndex}>{cell || '\u00A0'}</td>
-                                    ))}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                          <div className="preview-table-container" dangerouslySetInnerHTML={{ __html: question.table.html }} />
                         )}
                       </div>
                     </div>
@@ -717,29 +882,20 @@ export default function SecondPaper() {
                           <div dangerouslySetInnerHTML={{ 
                             __html: subQuestion.text || `<em style='color: #999;'>No sub-question ${getSubQuestionLabel(subIndex)} yet...</em>` 
                           }} />
-                          {subQuestion.image && (
-                            <div className="preview-image-container">
-                              <img 
-                                src={subQuestion.image} 
-                                alt={`Sub-question ${getSubQuestionLabel(subIndex)}`}
-                                className="preview-image"
-                              />
+                          {subQuestion.images && subQuestion.images.length > 0 && (
+                            <div className={`preview-images-container ${subQuestion.imageAlign === 'right' ? 'preview-image-right' : 'preview-images-inline'}`}>
+                              {subQuestion.images.map((img, imgIndex) => (
+                                <img 
+                                  key={imgIndex}
+                                  src={img} 
+                                  alt={`Sub-question ${getSubQuestionLabel(subIndex)} - Image ${imgIndex + 1}`}
+                                  className="preview-image"
+                                />
+                              ))}
                             </div>
                           )}
                           {subQuestion.table && (
-                            <div className="preview-table-container">
-                              <table className="preview-table">
-                                <tbody>
-                                  {subQuestion.table.data.map((row, rowIndex) => (
-                                    <tr key={rowIndex}>
-                                      {row.map((cell, colIndex) => (
-                                        <td key={colIndex}>{cell || '\u00A0'}</td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
+                            <div className="preview-table-container" dangerouslySetInnerHTML={{ __html: subQuestion.table.html }} />
                           )}
                         </div>
                       </div>
@@ -755,29 +911,20 @@ export default function SecondPaper() {
                               <div dangerouslySetInnerHTML={{ 
                                 __html: nestedSub.text || `<em style='color: #999;'>No nested sub-question ${getNestedSubQuestionLabel(nestedIndex)} yet...</em>` 
                               }} />
-                              {nestedSub.image && (
-                              <div className="preview-image-container">
-                                <img 
-                                  src={nestedSub.image} 
-                                  alt={`Nested sub-question ${getNestedSubQuestionLabel(nestedIndex)}`}
-                                  className="preview-image"
-                                />
-                              </div>
+                              {nestedSub.images && nestedSub.images.length > 0 && (
+                                <div className={`preview-images-container ${nestedSub.imageAlign === 'right' ? 'preview-image-right' : 'preview-images-inline'}`}>
+                                  {nestedSub.images.map((img, imgIndex) => (
+                                    <img 
+                                      key={imgIndex}
+                                      src={img} 
+                                      alt={`Nested sub-question ${getNestedSubQuestionLabel(nestedIndex)} - Image ${imgIndex + 1}`}
+                                      className="preview-image"
+                                    />
+                                  ))}
+                                </div>
                               )}
                               {nestedSub.table && (
-                                <div className="preview-table-container">
-                                  <table className="preview-table">
-                                    <tbody>
-                                      {nestedSub.table.data.map((row, rowIndex) => (
-                                        <tr key={rowIndex}>
-                                          {row.map((cell, colIndex) => (
-                                            <td key={colIndex}>{cell || '\u00A0'}</td>
-                                          ))}
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
+                                <div className="preview-table-container" dangerouslySetInnerHTML={{ __html: nestedSub.table.html }} />
                               )}
                             </div>
                           </div>
@@ -792,29 +939,20 @@ export default function SecondPaper() {
                                 <div dangerouslySetInnerHTML={{ 
                                   __html: deepNestedSub.text || `<em style='color: #999;'>No sub-question ${getDeepNestedSubQuestionLabel(deepNestedIndex)} yet...</em>` 
                                 }} />
-                                {deepNestedSub.image && (
-                                  <div className="preview-image-container">
-                                    <img 
-                                      src={deepNestedSub.image} 
-                                      alt={`Deep nested sub-question ${getDeepNestedSubQuestionLabel(deepNestedIndex)}`}
-                                      className="preview-image"
-                                    />
+                                {deepNestedSub.images && deepNestedSub.images.length > 0 && (
+                                  <div className={`preview-images-container ${deepNestedSub.imageAlign === 'right' ? 'preview-image-right' : 'preview-images-inline'}`}>
+                                    {deepNestedSub.images.map((img, imgIndex) => (
+                                      <img 
+                                        key={imgIndex}
+                                        src={img} 
+                                        alt={`Deep nested sub-question ${getDeepNestedSubQuestionLabel(deepNestedIndex)} - Image ${imgIndex + 1}`}
+                                        className="preview-image"
+                                      />
+                                    ))}
                                   </div>
                                 )}
                                 {deepNestedSub.table && (
-                                  <div className="preview-table-container">
-                                    <table className="preview-table">
-                                      <tbody>
-                                        {deepNestedSub.table.data.map((row, rowIndex) => (
-                                          <tr key={rowIndex}>
-                                            {row.map((cell, colIndex) => (
-                                              <td key={colIndex}>{cell || '\u00A0'}</td>
-                                            ))}
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
+                                  <div className="preview-table-container" dangerouslySetInnerHTML={{ __html: deepNestedSub.table.html }} />
                                 )}
                               </div>
                             </div>

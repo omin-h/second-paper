@@ -647,3 +647,128 @@
 .deep-nested-sub-question-number {
   color: #E91E63;
 }
+
+/* Multiple Images Styles */
+.images-container {
+  margin-top: 15px;
+}
+
+.image-controls-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.image-count {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Inline images (center aligned) */
+.images-inline {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 15px;
+  background: #f9f9f9;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+}
+
+.single-image-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.single-image-wrapper .uploaded-image {
+  display: block;
+  height: 120px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  margin: 0;
+}
+
+.remove-single-image-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 4px 8px;
+  background: rgba(255, 76, 76, 0.9);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  transition: background 0.2s;
+}
+
+.remove-single-image-button:hover {
+  background: rgba(255, 0, 0, 0.95);
+}
+
+/* Right-aligned images container */
+.image-right {
+  float: right;
+  width: 40%;
+  margin-left: 15px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f9f9f9;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+}
+
+.image-right .single-image-wrapper {
+  width: 100%;
+}
+
+.image-right .uploaded-image {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+}
+
+/* Preview multiple images styles */
+.preview-images-inline {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 15px;
+  padding: 10px;
+  background: #f9f9f9;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+}
+
+.preview-images-inline .preview-image {
+  height: 100px;
+  width: auto;
+  margin: 0;
+}
+
+.preview-image-right {
+  float: right;
+  width: 35%;
+  margin-left: 15px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f9f9f9;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+}
+
+.preview-image-right .preview-image {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  margin: 0;
+}
